@@ -52,4 +52,4 @@ Remade skip list feature
 Improved Not So Hideous Animations compatibility
 
 18.Aug.2025
-Fixed weapons not wanish from cvar when moved from slot
+Fixed weapons not vanish from cvar when moved from slot
