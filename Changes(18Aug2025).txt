@@ -50,3 +50,6 @@ Added option for auto slots to skip first slot
 Fixed saving weapons feature
 Remade skip list feature
 Improved Not So Hideous Animations compatibility
+
+18.Aug.2025
+Fixed weapons not wanish from cvar when moved from slot

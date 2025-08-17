@@ -539,18 +539,21 @@ Class MRS_SlotsChanger : Inventory
 		}
 	}
 	
-	Bool MRS_TakeWeaponFromSlot(in array< class<weapon> > weaps, int num)
+	Bool MRS_TakeWeaponFromSlot(in array< class<weapon> > weaps, int num, in cvar CVa)
 	{
 		Array<Class <Weapon> > CurSl;
 		For(int i=0;i<Weaps.Size();i++){if(Weaps[i]&&Owner.FindInventory(Weaps[i])||SavedWeapons.Find(Weaps[i])!=SavedWeapons.Size())CurSl.Push(Weaps[i]);}
 		if(Num>=CurSl.Size())Return false;
 		
 		if(CurSl[Num] is "MRS_EmpySlot"){Weaps.Delete(Weaps.Find(CurSl[Num]));Return true;}
+		String CWar = CVa.GetString();
+		CWar.Replace(CurSl[Num].GetClassName()..",", "");
+		CVa.SetString(CWar);
 		Holdin = CurSl[Num];
 		Weaps[Weaps.Find(CurSL[Num])]="MRS_EmpySlot";
 		return true;
 	}
-	Bool MRS_PlaceWeaponInSlot(in array< class<weapon> > Slot, int num, in cvar Cva)
+	Bool MRS_PlaceWeaponInSlot(in array< class<weapon> > Slot, int num, in cvar CVa)
 	{
 		Array<Class <Weapon> > CurSl;
 		For(int i=0;i<Slot.Size();i++){if(Slot[i]&&Owner.FindInventory(Slot[i])||SavedWeapons.Find(Slot[i])!=SavedWeapons.Size())CurSl.Push(Slot[i]);}
@@ -699,16 +702,16 @@ Class MRS_SlotsChanger : Inventory
 			//Which weapon in slot
 			Switch(Slot)
 			{
-				Case 1:if(MRS_TakeWeaponFromSlot(Weaps1, Num)) Return; Break;
-				Case 2:if(MRS_TakeWeaponFromSlot(Weaps2, Num)) Return; Break;
-				Case 3:if(MRS_TakeWeaponFromSlot(Weaps3, Num)) Return; Break;
-				Case 4:if(MRS_TakeWeaponFromSlot(Weaps4, Num)) Return; Break;
-				Case 5:if(MRS_TakeWeaponFromSlot(Weaps5, Num)) Return; Break;
-				Case 6:if(MRS_TakeWeaponFromSlot(Weaps6, Num)) Return; Break;
-				Case 7:if(MRS_TakeWeaponFromSlot(Weaps7, Num)) Return; Break;
-				Case 8:if(MRS_TakeWeaponFromSlot(Weaps8, Num)) Return; Break;
-				Case 9:if(MRS_TakeWeaponFromSlot(Weaps9, Num)) Return; Break;
-				Case 10:if(MRS_TakeWeaponFromSlot(Weaps0, Num)) Return; Break;
+				Case 1:if(MRS_TakeWeaponFromSlot(Weaps1, Num, cvar.GetCVar("MRS_Change1", owner.Player))) Return; Break;
+				Case 2:if(MRS_TakeWeaponFromSlot(Weaps2, Num, cvar.GetCVar("MRS_Change2", owner.Player))) Return; Break;
+				Case 3:if(MRS_TakeWeaponFromSlot(Weaps3, Num, cvar.GetCVar("MRS_Change3", owner.Player))) Return; Break;
+				Case 4:if(MRS_TakeWeaponFromSlot(Weaps4, Num, cvar.GetCVar("MRS_Change4", owner.Player))) Return; Break;
+				Case 5:if(MRS_TakeWeaponFromSlot(Weaps5, Num, cvar.GetCVar("MRS_Change5", owner.Player))) Return; Break;
+				Case 6:if(MRS_TakeWeaponFromSlot(Weaps6, Num, cvar.GetCVar("MRS_Change6", owner.Player))) Return; Break;
+				Case 7:if(MRS_TakeWeaponFromSlot(Weaps7, Num, cvar.GetCVar("MRS_Change7", owner.Player))) Return; Break;
+				Case 8:if(MRS_TakeWeaponFromSlot(Weaps8, Num, cvar.GetCVar("MRS_Change8", owner.Player))) Return; Break;
+				Case 9:if(MRS_TakeWeaponFromSlot(Weaps9, Num, cvar.GetCVar("MRS_Change9", owner.Player))) Return; Break;
+				Case 10:if(MRS_TakeWeaponFromSlot(Weaps0, Num, cvar.GetCVar("MRS_Change0", owner.Player))) Return; Break;
 			}
 		}
 		
