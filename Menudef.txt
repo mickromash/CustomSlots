@@ -1,5 +1,6 @@
 AddOptionMenu "OptionsMenu"
 {
+	StaticText ""
     StaticText "$MRCustomSlots"
     Option "$MRS_TouchScreen", "MRS_TouchScreen", "YesNo"
 	Option "$MRS_NewSlotOnPickup", "MRS_NewSlotOnPickup", "YesNo"
