@@ -1,0 +1,18 @@
+addkeysection "$MRCustomSlots" MR_Slots
+addmenukey "$MRS_Customize" "Netevent MRS_Customize"
+addmenukey "$MRS_NextWeapon" "Netevent MRS_Switch 1"
+addmenukey "$MRS_PreviousWeapon" "Netevent MRS_Switch 0"
+addmenukey "$MRS_Wheel" +MRS_Wheel
+addmenukey "$MRS_Slot1" "netevent MRS_ChngSlot 1"
+addmenukey "$MRS_Slot2" "netevent MRS_ChngSlot 2"
+addmenukey "$MRS_Slot3" "netevent MRS_ChngSlot 3"
+addmenukey "$MRS_Slot4" "netevent MRS_ChngSlot 4"
+addmenukey "$MRS_Slot5" "netevent MRS_ChngSlot 5"
+addmenukey "$MRS_Slot6" "netevent MRS_ChngSlot 6"
+addmenukey "$MRS_Slot7" "netevent MRS_ChngSlot 7"
+addmenukey "$MRS_Slot8" "netevent MRS_ChngSlot 8"
+addmenukey "$MRS_Slot9" "netevent MRS_ChngSlot 9"
+addmenukey "$MRS_Slot0" "netevent MRS_ChngSlot 0"
+
+alias +MRS_Wheel "Netevent MRS_OpenWheel"
+alias -MRS_Wheel +MRS_Wheel

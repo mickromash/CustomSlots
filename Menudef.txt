@@ -1,0 +1,8 @@
+AddOptionMenu "OptionsMenu"
+{
+    StaticText "$MRCustomSlots"
+    Option "$MRS_TouchScreen", "MRS_TouchScreen", "YesNo"
+	Option "$MRS_NewSlotOnPickup", "MRS_NewSlotOnPickup", "YesNo"
+	Slider "$MRS_MaxAutoSlots", "MRS_MaxAutoSlots", 1, 10, 1, 0, "MRS_NewSlotOnPickup"
+	Option "$MRS_AutoSkipFirstSlot", "MRS_AutoSkipFirstSlot", "YesNo"
+}

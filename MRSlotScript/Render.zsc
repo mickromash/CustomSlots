@@ -1,0 +1,411 @@
+Extend Class MRS_Handler
+{
+	Override Void InterfaceProcess(ConsoleEvent e)
+	{
+		if(e.Name ~== "MRS_NewWeapon")
+		{
+			Let inv = MRS_SlotsChanger(Players[ConsolePlayer].mo.FindInventory("MRS_SlotsChanger"));
+			if(!Inv)Return;
+			
+			Let Wep = Inv.CurWeaps[Inv.CurWeaps.Size()-1];
+			if(!Wep)Return;
+			TextureID Ico;
+			if(GetDefaultByType(Wep).Icon)
+			{
+				Ico = GetDefaultByType(Wep).Icon;
+			}
+			else
+			{
+				Ico = GetDefaultByType(Wep).FindState("Spawn").GetSpriteTexture(0,0, (0,0));
+			}
+			JustGetted.Push(Texman.GetName(Ico));
+			JustGettedSlt.Push(e.args[0]);
+			JustGettedPos.Push(35);
+		}
+	}
+	
+	Ui Array<String> JustGetted;
+	Ui Array<int> JustGettedSlt;
+	Ui Array<float> JustGettedPos;
+	Ui LinearValueInterpolator AutoSlotInter;
+	
+	Ui Void MRS_DrawSlot(in array< class<weapon> > Slot, MRS_SlotsChanger Inv, Vector2 Ofst = (0,0), int SlotNum = 1)
+	{
+		Let Sb = StatusBar;
+		Class<Weapon> PlrWeap = Null;
+		if(Players[ConsolePlayer].ReadyWeapon)PlrWeap = Players[ConsolePlayer].ReadyWeapon.GetClass();
+		Vector2 Scal = (1, 1);
+		Vector2 BasOfs = (20, 8);
+		Vector2 DesiredSize = (40, 30);
+		
+		HUDFont ConFont = HUDFont.Create("ConsoleFont");
+		HUDFont BigFnt = HUDFont.Create("BigFont");
+		HUDFont SmalFont = HUDFont.Create("SmallFont");
+		
+		For(int i=0;i<Slot.Size();i++)
+		{
+			if(!Slot[i]||(!Players[ConsolePlayer].mo.FindInventory(Slot[i])&&Inv.SavedWeapons.Find(Slot[i])==Inv.SavedWeapons.Size()))Continue;
+			Color BarCol = Color(255, 0, 50, 100);
+			if(Slot[i] == PlrWeap)BarCol = Color(255, 0, 100, 200);
+			Vector2 Size = (40, 30);
+			TextureID Ico;
+			if(GetDefaultByType(Slot[i]).Icon)
+			{
+				Ico = GetDefaultByType(Slot[i]).Icon;
+				Size = Texman.GetScaledSize(Ico);
+			}
+			else if(Players[ConsolePlayer].mo.FindInventory(Slot[i]))
+			{
+				Ico = Players[ConsolePlayer].mo.FindInventory(Slot[i]).FindState("Spawn").GetSpriteTexture(0,0, (0,0));
+				Size = Texman.GetScaledSize(Ico);
+			}
+			Float Scal = DesiredSize.X*.8/Size.X;
+			sb.Fill(Color(255, BarCol.R, BarCol.G, BarCol.B), BasOfs.X+Ofst.X, BasOfs.Y+Ofst.Y, DesiredSize.X, DesiredSize.Y, sb.DI_SCREEN_LEFT_TOP);
+			sb.Fill(Color(255, int(BarCol.R*.75), int(BarCol.G*.75), int(BarCol.B*.75)), BasOfs.X+Ofst.X+DesiredSize.X*.1, BasOfs.Y+Ofst.Y+DesiredSize.Y*.1, DesiredSize.X-DesiredSize.X*.2, DesiredSize.Y-DesiredSize.Y*.2, sb.DI_SCREEN_LEFT_TOP);
+			sb.DrawImage(Texman.GetName(Ico), Ofst+BasOfs + (DesiredSize.X*.5, DesiredSize.Y*.5), sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_CENTER, 1, Scale: (1,1)*Scal);
+			if(Inv.SavedWeapons.Find(Slot[i])!=Inv.SavedWeapons.Size())sb.DrawString(SmalFont, "*", BasOfs + Ofst + (DesiredSize.X*.7, DesiredSize.Y*.1), sb.DI_SCREEN_LEFT_TOP, Font.CR_FIRE);
+			String Nam = GetDefaultByType(Slot[i]).GetTag();
+			if(Players[ConsolePlayer].mo.FindInventory(Slot[i]))Nam = Players[ConsolePlayer].mo.FindInventory(Slot[i]).GetTag();
+			Float TextSize = SmallFont.StringWidth(Nam)*1.2;
+			Scal = DesiredSize.X/TextSize;
+			
+			if(!(Slot[i] is "MRS_EmpySlot"))sb.DrawString(SmalFont, Nam, BasOfs+Ofst+(DesiredSize.X/2, DesiredSize.Y*.8), sb.DI_SCREEN_LEFT_TOP|sb.DI_TEXT_ALIGN_CENTER, Font.CR_UNTRANSLATED, 1, Scale: (Min(.5, Scal), .5));
+			Ofst.Y += DesiredSize.Y;
+		}
+		sb.DrawString(ConFont, ""..SlotNum, (BasOfs.X,0)+(Ofst.X,0)+(DesiredSize.X/2, 0), sb.DI_SCREEN_LEFT_TOP|sb.DI_TEXT_ALIGN_CENTER, Font.CR_RED, 1, Scale: (2,.8));
+	}
+	
+	Override Void RenderOverlay(RenderEvent e)
+    {
+		String UiPlugS = "MRS_UiHandler";
+		Class<EventHandler> UiPlug = UiPlugS;
+		if(UiPlug)Return;
+	    Let Sb = Statusbar;
+		if(!Players[ConsolePlayer].mo.FindInventory("MRS_SlotsChanger"))Return;
+		Let Inv = MRS_SlotsChanger(Players[ConsolePlayer].mo.FindInventory("MRS_SlotsChanger"));
+		
+		bool OriginalFullscreen = Sb.FullscreenOffsets;
+		Sb.FullscreenOffsets = true;
+		
+		
+		HUDFont ConFont = HUDFont.Create("ConsoleFont");
+		HUDFont BigFnt = HUDFont.Create("BigFont");
+		HUDFont SmalFont = HUDFont.Create("SmallFont");
+		
+		int Posy[10];
+		Float Alphy[10];
+		if(!AutoSlotInter)AutoSlotInter = LinearValueInterpolator.Create(0, 2);
+		
+		Float SlotAlph;
+		if(JustGetted.Size()>0)
+		{
+			AutoSlotInter.Update((JustGettedPos[JustGettedPos.Size()-1]+5)/5*10);
+			SlotAlph = AutoSlotInter.GetValue();
+			SlotAlph *= .1;
+		}
+		else AutoSlotInter.Reset(0);
+		For(int i=0;i<JustGetted.Size();i++)
+		{
+			int Slot = JustGettedSlt[i];
+			if(JustGettedSlt[i]==0)Slot = 10;
+			
+			if(Posy[Slot]<=0)JustGettedPos[i]-=.5;
+			if(JustGettedPos[i]<-5||JustGetted[i]~=="TNT1A0")
+			{
+				JustGettedPos.Delete(i);
+				JustGetted.Delete(i);
+				JustGettedSlt.Delete(i);
+				i--;
+				Continue;
+			}
+			
+			Float DownScale = 1;
+			Vector2 Scalee = (1, 1);
+			TextureID Ico = Texman.CheckForTexture(JustGetted[i]);
+			Scalee = Texman.GetScaledSize(Ico);
+			Scalee.Y = Texman.CheckRealHeight(Ico);
+			DownScale = Min(2, 40/Scalee.X);
+			
+			
+			sb.DrawImage(JustGetted[i], (15+Slot*40, Posy[Slot]), sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_TOP, Min(SlotAlph, (JustGettedPos[i]+5)/5), scale:(1, 1)*DownScale);
+			
+			Posy[Slot] += Scalee.Y*DownScale+2;
+			Alphy[Slot] = (JustGettedPos[i]+5)/5;
+		}
+		
+		For(int i=0;i<10;i++)
+		{
+			if(Posy[i]<=0)Continue;
+			
+			int Slot = i;
+			if(i==0)Slot = 10;
+			
+			sb.DrawString(BigFnt, ""..i, (15+Slot*40, 0), sb.DI_SCREEN_LEFT_TOP|sb.DI_TEXT_ALIGN_CENTER, Font.CR_UNTRANSLATED, Min(SlotAlph, Min(.8, Alphy[i])));
+			
+		}
+		
+		if(Inv.WheelOpen)
+		{
+			bool OriginalFullscreen = Sb.FullscreenOffsets;
+			Sb.FullscreenOffsets = true;
+			if(Inv.WhelSlot!=ChosenSlot && Inv.WhelSlot!=-1)S_StartSound("DeltaWWheel", CHAN_AUTO, CHANF_UI|CHANF_LOCAL);
+			ChosenSlot = Inv.WhelSlot;
+			
+			sb.DrawImage("DelWWeel", (0,0), sb.DI_SCREEN_CENTER|sb.DI_ITEM_CENTER, .6, scale:(.4,.4));
+			if(ChosenSlot!=-1){int Slt = ChosenSlot;if(Slt==0)Slt=10;
+				sb.DrawImage("AshySprk", 
+				((Slt==1||Slt==5)?Inv.WhelSlt[ChosenSlot][1].X:(Slt==10||Slt==6)?Inv.WhelSlt[ChosenSlot][0].X:
+				Slt<6?Inv.WhelSlt[ChosenSlot][0].X*3:Inv.WhelSlt[ChosenSlot][1].X*3,
+				(Slt==3||Slt==8)?Inv.WhelSlt[ChosenSlot][1].Y-5:(Slt<8&&Slt>3)?Inv.WhelSlt[ChosenSlot][0].Y*3:Inv.WhelSlt[ChosenSlot][1].Y*3),
+				sb.DI_SCREEN_CENTER|sb.DI_ITEM_CENTER, 1);}
+			
+			/*int Col=0;
+			For(int i=0;i<10;i++)
+			{
+				Col+=20;
+				sb.Fill(Color(100,0,Col,0), Inv.WhelSlt[i][0].X, Inv.WhelSlt[i][0].Y, Inv.WhelSlt[i][1].X-Inv.WhelSlt[i][0].X, Inv.WhelSlt[i][1].Y-Inv.WhelSlt[i][0].Y, sb.DI_SCREEN_CENTER);
+			}*/
+
+			sb.Fill(Color(100, 255, 255, 0), Inv.WhelCursor.X-1, Inv.WhelCursor.Y-1, 2, 2, sb.DI_SCREEN_CENTER);
+			Sb.FullscreenOffsets = OriginalFullscreen;
+			Return;
+		}
+		
+		if(!Inv.Editing)Return;
+		Vector2 Scal = (1, 1);
+		Vector2 BasOfs = (20, 8);
+		Vector2 DesiredSize = (40, 30);
+		Vector2 Ofst = (0, 0);
+		Class<Weapon> PlrWeap = Null;
+		if(Players[ConsolePlayer].ReadyWeapon)PlrWeap = Players[ConsolePlayer].ReadyWeapon.GetClass();
+		
+		MRS_DrawSlot(Inv.Weaps1, Inv);
+		
+		Ofst = (DesiredSize.X*.9, 0);
+		MRS_DrawSlot(Inv.Weaps2, Inv, Ofst, 2);
+		
+		Ofst = (DesiredSize.X*.9*2, 0);
+		MRS_DrawSlot(Inv.Weaps3, Inv, Ofst, 3);
+		
+		Ofst = (DesiredSize.X*.9*3, 0);
+		MRS_DrawSlot(Inv.Weaps4, Inv, Ofst, 4);
+		
+		Ofst = (DesiredSize.X*.9*4, 0);
+		MRS_DrawSlot(Inv.Weaps5, Inv, Ofst, 5);
+		
+		Ofst = (DesiredSize.X*.9*5, 0);
+		MRS_DrawSlot(Inv.Weaps6, Inv, Ofst, 6);
+		
+		Ofst = (DesiredSize.X*.9*6, 0);
+		MRS_DrawSlot(Inv.Weaps7, Inv, Ofst, 7);
+		
+		Ofst = (DesiredSize.X*.9*7, 0);
+		MRS_DrawSlot(Inv.Weaps8, Inv, Ofst, 8);
+		
+		Ofst = (DesiredSize.X*.9*8, 0);
+		MRS_DrawSlot(Inv.Weaps9, Inv, Ofst, 9);
+		
+		Ofst = (DesiredSize.X*.9*9, 0);
+		MRS_DrawSlot(Inv.Weaps0, Inv, Ofst, 0);
+		
+
+		sb.Fill(Color(30, 0, 170, 200), 0, 250, 999, 600, sb.DI_SCREEN_LEFT_TOP);
+		//All weapons list
+		Ofst = (DesiredSize.X*.9*10, 0);
+		Array< class<weapon> > SkipList;
+		if(Inv.OnlySkiped)
+		{
+			String Skip = CVar.GetCVar("MRS_Skip", Inv.Owner.Player).GetString();
+			For(int i=0;i<100;i++)
+			{
+				String Wep = Skip.Left(Skip.IndexOf(","));
+				Skip = Skip.Mid(Skip.IndexOf(",")+1);
+				Class<Weapon> Weap = Wep;
+				if(!Weap)Continue;
+
+				if(SkipList.Find(Weap)==SkipList.Size())SkipList.Push(Weap);
+				else i=0;
+				if(Skip.Length()<1)Break;
+			}
+		}
+		
+		Float Scaler = Inv.ListedWeapons.Size();
+		int ListSize = Inv.ListedWeapons.Size();
+		if(Inv.OnlySkiped)
+		{
+			ListSize = SkipList.Size();
+			Scaler = SkipList.Size();
+		}
+		else if(Inv.OnlyOwned)
+		{
+			ListSize = Inv.CurWeapons.Size();
+			Scaler = Inv.CurWeapons.Size();
+		}
+		Scaler/=26*10;
+		Sb.SetClipRect(BasOfs.X+Ofst.X+5, 0, 200, 24*11, sb.DI_SCREEN_LEFT_TOP);
+		For(int i=Inv.ScrollPos*Scaler;i<Inv.ScrollPos*Scaler+25&&i<ListSize;i++)
+		{
+			Let Item = Inv.ListedWeapons[i];
+			if(Inv.OnlySkiped)Item = SkipList[i];
+			else if(Inv.OnlyOwned)Item = Inv.CurWeapons[i];
+			String Namee = GetDefaultByType(Item).GetTag();
+			if(Players[ConsolePlayer].mo.FindInventory(Item))Namee = Players[ConsolePlayer].mo.FindInventory(Item).GetTag();
+			
+			Float Scal = BigFont.StringWidth(Namee);
+			if(Scal==0)Scal=.001;
+			Scal = Min(.4, 185/Scal*.4);
+			int StrSize = BigFont.StringWidth(Namee)*Scal;
+			Color BarCol = Color(255, 0, 50, 100);
+			sb.Fill(BarCol, BasOfs.X+Ofst.X+5, (i-Inv.ScrollPos*Scaler)*10, StrSize + 20, 10, sb.DI_SCREEN_LEFT_TOP);
+			sb.Fill(Color(255, int(BarCol.R*.75), int(BarCol.G*.75), int(BarCol.B*.75)), BasOfs.X+Ofst.X+6, 1+(i-Inv.ScrollPos*Scaler)*10, StrSize + 18, 8, sb.DI_SCREEN_LEFT_TOP);
+			
+			TextureID Ico;
+			Vector2 Size;
+			if(GetDefaultByType(Item).Icon)
+			{
+				Ico = GetDefaultByType(Item).Icon;
+				Size = Texman.GetScaledSize(Ico);
+			}
+			else if(Players[ConsolePlayer].mo.FindInventory(Item))
+			{
+				Ico = Players[ConsolePlayer].mo.FindInventory(Item).FindState("Spawn").GetSpriteTexture(0,0, (0,0));
+				Size = Texman.GetScaledSize(Ico);
+			}
+			else
+			{
+				Ico = GetDefaultByType(Item).FindState("Spawn").GetSpriteTexture(0,0, (0,0));
+				Size = Texman.GetScaledSize(Ico);
+			}
+			
+			sb.DrawString(BigFnt, Namee, Ofst+BasOfs+(20, 10*(i-Inv.ScrollPos*Scaler))-(0, 5), sb.DI_SCREEN_LEFT_TOP, Font.CR_UNTRANSLATED, 1, scale:(Scal, .4));
+			String Skip = CVar.GetCVar("MRS_Skip", Players[ConsolePlayer]).GetString();
+			if(Skip.IndexOf(","..Item.GetClassName()..",")>-1)Sb.Fill(Color(250, 200,0,0), BasOfs.X+Ofst.X+6, 1+(i-Inv.ScrollPos*Scaler)*10, 12, 8, sb.DI_SCREEN_LEFT_TOP);
+			
+			Scal = 11/Size.Y;
+			if(Size.X>Size.Y)Scal = 11/Size.X;
+			sb.DrawImage(Texman.GetName(Ico), Ofst+BasOfs+(6, 10*(i-Inv.ScrollPos*Scaler)), sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_LEFT, 1, Scale: (1,1)*Scal);
+		}
+		sb.ClearClipRect();
+		//Scroller
+		Color BarCol = Color(255, 0, 50, 100);
+		sb.Fill(BarCol, BasOfs.X+Ofst.X, 0, 5, 5, sb.DI_SCREEN_LEFT_TOP);
+		sb.Fill(Color(255, int(BarCol.R*.75), int(BarCol.G*.75), int(BarCol.B*.75)), Ofst.X+BasOfs.X+1, 1, 3, 3, sb.DI_SCREEN_LEFT_TOP);
+		
+		sb.Fill(BarCol, BasOfs.X+Ofst.X, 5, 5, 24*10, sb.DI_SCREEN_LEFT_TOP);
+		sb.Fill(Color(255, int(BarCol.R*.5), int(BarCol.G*.5), int(BarCol.B*.5)), Ofst.X+BasOfs.X+1, 6, 3, 24*10-2, sb.DI_SCREEN_LEFT_TOP);
+		if(ListSize<1)ListSize = 1;
+		sb.Fill(BarCol, BasOfs.X+Ofst.X, 5+Inv.ScrollPos, 5, Max(2, (24*10/ListSize)), sb.DI_SCREEN_LEFT_TOP);
+		sb.Fill(Color(255, int(BarCol.R*.75), int(BarCol.G*.75), int(BarCol.B*.75)), BasOfs.X+Ofst.X+1, 5+Inv.ScrollPos+1, 3, 24*10/ListSize-2, sb.DI_SCREEN_LEFT_TOP);
+		
+		sb.Fill(BarCol, BasOfs.X+Ofst.X, 24*10+5, 5, 5, sb.DI_SCREEN_LEFT_TOP);
+		sb.Fill(Color(255, int(BarCol.R*.75), int(BarCol.G*.75), int(BarCol.B*.75)), Ofst.X+BasOfs.X+1, 24*10+6, 3, 3, sb.DI_SCREEN_LEFT_TOP);
+		//Toggle only owned
+		sb.Fill(BarCol, BasOfs.X+Ofst.X-10, 24*10, 10, 10, sb.DI_SCREEN_LEFT_TOP);
+		Color ButtonCol = Color(255, int(BarCol.R*.75), int(BarCol.G*.75), int(BarCol.B*.75));
+		if(Inv.OnlyOwned)ButtonCol = Color(255, 0, 70, 200);
+		sb.Fill(ButtonCol, Ofst.X+BasOfs.X-8, 24*10+2, 6, 6, sb.DI_SCREEN_LEFT_TOP);
+		//Toggle only skiped
+		sb.Fill(BarCol, BasOfs.X+Ofst.X-10, 24*10-10, 10, 10, sb.DI_SCREEN_LEFT_TOP);
+		ButtonCol = Color(255, int(BarCol.R*.75), int(BarCol.G*.75), int(BarCol.B*.75));
+		if(Inv.OnlySkiped)ButtonCol = Color(255, 200, 0, 0);
+		sb.Fill(ButtonCol, Ofst.X+BasOfs.X-8, 24*10+2-10, 6, 6, sb.DI_SCREEN_LEFT_TOP);
+		//Search bar
+		sb.Fill(BarCol, BasOfs.X+Ofst.X-10, 25*10, 111, 6, sb.DI_SCREEN_LEFT_TOP);
+		sb.Fill(Color(255, int(BarCol.R*.75), int(BarCol.G*.75), int(BarCol.B*.75)), BasOfs.X+Ofst.X-9.5, 25*10+.5, 110, 5, sb.DI_SCREEN_LEFT_TOP);
+		
+		String Str = StringTable.Localize("$MRS_Search");
+		if(Inv.SearchStr!=""||Inv.Searchin)
+		{
+			Str = Inv.SearchStr;
+			if(inv.GetAge()%10>4 && Inv.Searchin)Str = Str.."_";
+		}
+		else
+		{
+			if(Inv.SearchParent)Str = Str..StringTable.Localize("$MRS_SearchParent");
+			else Str = Str..StringTable.Localize("$MRS_SearchClass");
+		}
+		
+		sb.DrawString(SmalFont, Str, (BasOfs.X+Ofst.X-9.5, 25*10+2), sb.DI_SCREEN_LEFT_TOP, Font.CR_UNTRANSLATED, Str==StringTable.Localize("$MRS_Search")?.5:1, scale:(.4, .45));
+		
+		sb.Fill(BarCol, BasOfs.X+Ofst.X-10, 25*10+6, 56, 6, sb.DI_SCREEN_LEFT_TOP);
+		ButtonCol = Color(255, int(BarCol.R*.75), int(BarCol.G*.75), int(BarCol.B*.75));
+		if(!Inv.SearchParent)ButtonCol = Color(255, 0, 70, 200);
+		sb.Fill(ButtonCol, BasOfs.X+Ofst.X-9.5, 25*10+6.5, 55, 5, sb.DI_SCREEN_LEFT_TOP);
+		
+		String Filter = StringTable.Localize("$MRS_SearchClass");
+		Float Scaly = SmallFont.StringWidth(Filter);
+		Scaly = Min(.4, 20/(Scaly*.4));
+		sb.DrawString(SmalFont, Filter, (BasOfs.X+Ofst.X-9.5+27, 25*10+7), sb.DI_SCREEN_LEFT_TOP|sb.DI_TEXT_ALIGN_CENTER, Font.CR_UNTRANSLATED, Inv.SearchParent?.5:1, scale:(Scaly, .45));
+		
+		sb.Fill(BarCol, BasOfs.X+Ofst.X-10+56, 25*10+6, 56, 6, sb.DI_SCREEN_LEFT_TOP);
+		ButtonCol = Color(255, int(BarCol.R*.75), int(BarCol.G*.75), int(BarCol.B*.75));
+		if(Inv.SearchParent)ButtonCol = Color(255, 0, 70, 200);
+		sb.Fill(ButtonCol, BasOfs.X+Ofst.X-9.5+56, 25*10+6.5, 55, 5, sb.DI_SCREEN_LEFT_TOP);
+		Filter = StringTable.Localize("$MRS_SearchParent");
+		Scaly = SmallFont.StringWidth(Filter);
+		Scaly = Min(.4, 20/(Scaly*.4));
+		sb.DrawString(SmalFont, Filter, (BasOfs.X+Ofst.X-9.5+55+27, 25*10+7), sb.DI_SCREEN_LEFT_TOP|sb.Di_TEXT_ALIGN_CENTER, Font.CR_UNTRANSLATED, Inv.SearchParent?1:.5, scale:(Scaly, .45));
+		
+		sb.Fill(Color(120, 0,0,0), Inv.TipsToggle[0].X, Inv.TipsToggle[0].Y, Inv.TipsToggle[1].X, Inv.TipsToggle[1].Y - Inv.TipsToggle[0].Y, sb.DI_SCREEN_LEFT_TOP);
+		if(CVar.GetCVar("MRS_ShowTips", Players[ConsolePlayer]).GetBool()){
+		if(CVar.GetCVar("MRS_TouchScreen", Inv.Owner.Player).GetBool())
+			sb.DrawString(SmalFont, StringTable.Localize("$MRS_Help1"),
+			(0, 208), sb.DI_SCREEN_LEFT_TOP, Font.CR_WHITE, scale: (.6,.8));
+		else sb.DrawString(SmalFont, StringTable.Localize("$MRS_Help0"),
+			(0, 208), sb.DI_SCREEN_LEFT_TOP, Font.CR_WHITE, scale: (.6,.8));
+		sb.DrawString(SmalFont, StringTable.Localize("$MRS_Help2"), (0, 215), sb.DI_SCREEN_LEFT_TOP, Font.CR_WHITE, scale: (.6,.8));
+		sb.DrawString(SmalFont, StringTable.Localize("$MRS_Help3"), (0, 222), sb.DI_SCREEN_LEFT_TOP, Font.CR_WHITE, scale: (.6,.8));
+		sb.DrawString(SmalFont, StringTable.Localize("$MRS_Help4"), (0, 229), sb.DI_SCREEN_LEFT_TOP, Font.CR_WHITE, scale: (.6,.8));
+		sb.DrawString(SmalFont, StringTable.Localize("$MRS_Help5"), (0, 236), sb.DI_SCREEN_LEFT_TOP, Font.CR_WHITE, scale: (.6,.8));
+		sb.DrawString(SmalFont, StringTable.Localize("$MRS_Help6"), (0, 243), sb.DI_SCREEN_LEFT_TOP, Font.CR_WHITE, scale: (.6,.8));
+		}
+		else sb.DrawString(SmalFont, StringTable.Localize("$MRS_ShowTips"), (0, 243), sb.DI_SCREEN_LEFT_TOP, Font.CR_WHITE, .5, scale: (.6,.8));
+		//Cursor
+		if(Inv.Holdin == Null)
+		{
+			if(CVar.GetCVar("MRS_TouchScreen", Inv.Owner.Player).GetBool()){
+			String Cursor = CVar.GetCVar("vid_cursor", Players[ConsolePlayer]).GetString();
+			if(!Texman.CheckForTexture(Cursor, Texman.TYPE_ANY) || Cursor == "None")Cursor = "cursor";
+			sb.DrawImage(Cursor, Inv.Mouse, sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_LEFT_TOP, .9, scale: (.7, .7));}
+			if(Inv.HighLightDel>30 && !(Inv.Mouse.X>170 && Inv.Mouse.Y>24*10.5 && Inv.Mouse.Y<=24*11))
+			{
+				Float Alph = Inv.HighlightDel - 30;
+				Alph = Alph/5;
+				Float Size = BigFont.StringWidth(Inv.Highlight);
+				
+				if(Inv.Mouse.X + Size*.52>450)
+				{
+					sb.Fill(Color(int(200*Alph), 255, 255, 255), Inv.Mouse.X-Size*.52, Inv.Mouse.Y-5, Size*.52, 20*.55, sb.DI_SCREEN_LEFT_TOP);
+					sb.DrawString(BigFnt, Inv.Highlight, Inv.Mouse - (4, 2), sb.DI_SCREEN_LEFT_TOP|sb.DI_TEXT_ALIGN_RIGHT, Font.CR_BLACK, Alph, scale:(.5,.5));
+				}
+				else{
+				sb.Fill(Color(int(200*Alph), 255, 255, 255), Inv.Mouse.X+2, Inv.MOuse.Y-5, Size*.52, 20*.55, sb.DI_SCREEN_LEFT_TOP);
+				sb.DrawString(BigFnt, Inv.Highlight, Inv.Mouse + (2, -2), sb.DI_SCREEN_LEFT_TOP, Font.CR_BLACK, Alph, scale:(.5,.5));}
+			}
+			//sb.DrawString(SmalFont, "\cdX:\c-"..int(Inv.Mouse.X).."\cdY:\c-"..int(Inv.Mouse.Y), Inv.Mouse, sb.DI_SCREEN_LEFT_TOP);
+		}
+		else
+		{
+			Vector2 Size = (40, 30);
+			TextureID Ico;
+			if(GetDefaultByType(Inv.Holdin).Icon)
+			{
+				Ico = GetDefaultByType(Inv.Holdin).Icon;
+				Size = Texman.GetScaledSize(Ico);
+			}
+			else if(Players[ConsolePlayer].mo.FindInventory(Inv.Holdin))
+			{
+				Ico = Players[ConsolePlayer].mo.FindInventory(Inv.Holdin).FindState("Spawn").GetSpriteTexture(0,0, (0,0));
+				Size = Texman.GetScaledSize(Ico);
+			}
+			Float Scal = DesiredSize.X/Size.X*1.1;
+			sb.DrawImage(Texman.GetName(Ico), Inv.Mouse, sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_CENTER, 1, Scale: (1,1)*Scal);
+			
+			String Nam = GetDefaultByType(Inv.Holdin).GetTag();
+			if(Players[ConsolePlayer].mo.FindInventory(Inv.Holdin))Nam = Players[ConsolePlayer].mo.FindInventory(Inv.Holdin).GetTag();
+			sb.DrawString(SmalFont, Nam, Inv.Mouse, sb.DI_SCREEN_LEFT_TOP|sb.DI_TEXT_ALIGN_CENTER, Font.CR_UNTRANSLATED, 1);
+		}
+		Sb.FullscreenOffsets = OriginalFullscreen;
+    }
+
+}

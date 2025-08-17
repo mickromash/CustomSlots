@@ -1,0 +1,1030 @@
+Version "4.0"
+
+Class MRS_Handler : EventHandler
+{
+	Array<String> NSHWeaps;
+	Override Void OnRegister()
+	{
+		for (int i = 0; i < AllActorClasses.Size(); i++)
+        {
+	        Let Weap = (Class<Weapon>)(AllActorClasses[i]);
+			if(!Weap)Continue;
+			if(Weapons.Find(Weap)==Weapons.Size())Weapons.Push(Weap);
+		}
+		
+		
+		NSHReplaced = ",";
+		Array<String> Stringy;
+		
+		int LumpNum = Wads.FindLump("NSHReplaced", 0);
+		While(LumpNum>-1)
+		{
+			String Temp = Wads.ReadLump(LumpNum);
+			if(Temp!="")Stringy.Push(Temp);
+			LumpNum = Wads.FindLump("NSHReplaced", LumpNum+1);
+		}
+
+		For(int i=0;i<Stringy.Size();i++)
+		{
+			While(Stringy[i].Length()>2)
+			{
+				String Weap = Stringy[i].Left(Stringy[i].IndexOf("\n")-1);
+				if(Stringy[i].IndexOf("\n")>-1)Stringy[i] = Stringy[i].Mid(Stringy[i].IndexOf("\n")+1);
+				else Stringy[i]="";
+				if(NSHReplaced.IndexOf(","..Weap..",")>-1)Continue;
+				else NSHReplaced=NSHReplaced..Weap..",";
+			}
+		}
+	}
+	
+	
+	ui Int ChosenSlot;
+	
+	Override Void NetworkProcess(ConsoleEvent e)
+	{
+		if(!Players[e.Player].mo || !Players[e.Player].mo.FindInventory("MRS_SlotsChanger"))Return;
+		Let Inv = MRS_SlotsChanger(Players[e.Player].mo.FindInventory("MRS_SlotsChanger"));
+		if(e.name ~== "Cur")
+		{For(int i=0;i<Inv.CurWeaps.Size();i++)Console.Printf(i.." "..Inv.CurWeaps[i].GetClassName());}
+		if(e.name ~== "MRS_Switch")
+		{
+			Inv.SwitchWeapon((e.Args[0]>0)?false:True);
+		}
+		if(e.name ~== "MRS_ChngSlot")
+		{
+			Inv.ChangeWeap(e.Args[0]);
+		}
+		if(e.name ~== "MRS_Customize")
+		{
+			Inv.Editing = !Inv.Editing;
+			self.IsUiProcessor = Inv.Editing;
+			self.RequireMouse = Inv.Editing;
+			if(Inv.Editing)
+			{
+				if(Inv.OnlyOwned)
+				{
+					Inv.CurWeapons.Clear();
+					
+					For(int i=0;i<Inv.AllWeapons.Size();i++)
+					{
+						if(Inv.Owner.FindInventory(Inv.AllWeapons[i]))Inv.CurWeapons.Push(Inv.AllWeapons[i]);
+					}
+				}
+				Inv.TipsToggle[0] = (0, 243);
+				Inv.TipsToggle[1] = (SmallFont.StringWidth(StringTable.Localize("$MRS_ShowTips"))*.6, 250);
+				if(CVar.GetCVar("MRS_ShowTips", Inv.Owner.Player).GetBool())
+				{
+					Inv.TipsToggle[0] = (0, 208);
+					Float Max = 0;
+					For(int i=0;i<7;i++)
+					{
+						Let Str = SmallFont.StringWidth(StringTable.Localize("$MRS_Help"..i))*.6;
+						if(Max==0||Max<Str)Max = Str;
+					}
+					Inv.TipsToggle[1] = (Max, 250);
+					Inv.GetKeys();
+				}
+				Inv.PlrAngle = Inv.Owner.Angle;
+				Inv.PlrPitch = Inv.Owner.Pitch;
+			}
+		}
+		if(e.name ~== "MRS_OpenWheel"){Inv.OpenWheel();}
+		if(e.name ~== "MRS_ScrollDown"){Inv.ScrollPos+=1;
+		int ListSize = Inv.CurWeapons.Size();
+		if(!Inv.OnlyOwned)ListSize = Inv.ListedWeapons.Size();
+		if(Inv.ScrollPos+(24*10/ListSize)>24*10)Inv.ScrollPos=24*10-(24*10/ListSize);}
+		if(e.name ~== "MRS_ScrollUp"){Inv.ScrollPos-=1;if(Inv.ScrollPos<0)Inv.ScrollPos=0;}
+		if(e.name ~== "MRS_UpdateMouse"){
+		Inv.Mouse = (e.args[0]/Cvar.GetCVar("hud_scale", Inv.Owner.Player).GetInt(), e.args[1]/Cvar.GetCVar("hud_scale", Inv.Owner.Player).GetInt());}
+		
+		if(e.name ~== "MRS_MPress")Inv.EditSlot();
+		if(e.name ~== "MRS_MUnPress")Inv.HoldScroll = false;
+		
+		if(e.Name ~== "MRS_MRPress")Inv.SaveWeapon();
+		
+		if(e.name ~== "MRSlot_SearchInput")
+		{
+			Switch(e.args[0])
+			{
+				case InputEvent.Key_Backspace:
+					if(Inv.SearchStr=="")Break;
+					Inv.HoldBackSpace = true;
+					Inv.HoldDelay = 20;
+					Break;
+				case InputEvent.Key_LShift:
+					Inv.HoldShift = true;
+					Break;
+
+				default:
+					if (e.args[1] >= 32 && e.args[1] <= 126)
+					{
+						int Chr = e.args[1];
+						if(Inv.HoldShift)
+						{
+							Switch(Chr)
+							{
+								Case 49://1
+									Chr = 33;Break;
+								Case 50://2
+									Chr = 64;Break;
+								Case 51://3
+									Chr = 35;Break;
+								Case 52://4
+									Chr = 36;Break;
+								Case 53://5
+									Chr = 37;Break;
+								Case 54://6
+									Chr = 94;Break;
+								Case 55://7
+									Chr = 38;Break;
+								Case 56://8
+									Chr = 42;Break;
+								Case 57://9
+									Chr = 40;Break;
+								Case 48://0
+									Chr = 41;Break;
+								Case 59://;
+									Chr = 58;Break;
+								Case 46://.
+									Chr = 62;Break;
+								Case 44://,
+									Chr = 60;Break;
+								Case 47:///
+									Chr = 63;Break;
+								Case 39://'
+									Chr = 34;Break;
+								Case 45://-
+									Chr = 95;Break;
+							}
+						}
+						
+						Inv.SearchStr = Inv.SearchStr..String.Format("%c", Chr);
+					}
+					Inv.UpdateList();
+					Break;
+			}
+		}
+		if(e.name ~== "MRSlot_KeyUnpress")
+		{
+			if(e.args[0] == InputEvent.Key_BackSpace)Inv.HoldBackSpace = false;
+			if(e.args[0] == InputEvent.Key_LShift)Inv.HoldShift = false;
+		}
+		if(e.name ~== "MRSlot_SearchEnter")
+		{
+			Inv.Searchin = !Inv.Searchin;
+			Self.IsUiProcessor = !Inv.Searchin;
+			Inv.UpdateList();
+		}
+	}
+	
+	Override Bool UiProcess(UiEvent e)
+	{
+		if(e.Type == e.Type_WheelDown)SendNetworkEvent("MRS_ScrollDown");
+		if(e.Type == e.Type_WheelUp)SendNetworkEvent("MRS_ScrollUp");
+		if(e.Type == e.Type_KeyDown && e.KeyChar == 27)SendNetworkEvent("MRS_Customize");
+		if(e.Type == e.Type_LButtonDown)SendNetworkEvent("MRS_MPress");
+		if(e.Type == e.Type_LButtonUp)SendNetworkEvent("MRS_MUnPress");
+		if(e.Type == e.Type_RButtonDown)SendNetworkEvent("MRS_MRPress");
+		SendNetworkEvent("MRS_UpdateMouse", e.MouseX, e.MouseY);
+		Return false;
+	}
+	
+	Override Bool InputProcess(InputEvent e)
+	{
+		Let Plr = Players[ConsolePlayer];
+		if(!Plr)Return false;
+		if(!Plr.mo.FindInventory("MRS_SlotsChanger"))Return false;
+		Let Inv = MRS_SlotsChanger(Plr.mo.FindInventory("MRS_SlotsChanger"));
+		if(!Inv)Return false;
+		if(!Inv.Searchin)Return false;
+		
+		
+		if(e.Type == e.Type_KeyDown){
+		
+			if (e.KeyScan == e.Key_Enter)
+			{
+				SendNetworkEvent("MRSlot_SearchEnter");
+				return false;
+			}
+			
+			SendNetworkEvent("MRSlot_SearchInput", e.KeyScan, e.KeyChar);
+			Return True;
+		}
+		else if(e.Type == e.Type_KeyUp)SendNetworkEvent("MRSlot_KeyUnpress", e.KeyScan);
+		Return false;
+	}
+	
+	Array< Class<Weapon> > Weapons;
+	String NSHReplaced;
+	
+	Bool MRS_CheckNSH(Name Wep)
+	{
+		if(NSHReplaced.Length()<3)Return false;
+		
+		if(NSHReplaced.IndexOf(","..Wep..",")>-1)Return true;
+
+		Return false;
+	}
+	
+	Void MRS_AddWeaponsToTokenArrayFromCVar(in out array< class<weapon> > Weaps, in out array< class<weapon> > CurWeaps, String CWar, PlayerInfo Plr, bool CheckCur = true)
+	{
+		String Skip = CVar.GetCVar("MRS_Skip", Plr).GetString();
+		
+		For(int i=0;i<70;i++)
+		{
+			String Wep = CWar.Left(CWar.IndexOf(","));
+			CWar = CWar.Mid(CWar.IndexOf(",")+1);
+			Class<Weapon> Weap = Wep;
+			if(!Weap)Continue;
+			if(MRS_CheckNSH(Wep))Continue;
+			
+			String Skip = CVar.GetCVar("MRS_Skip", Plr).GetString();
+			if(Skip.IndexOf(","..Wep..",")>-1)Continue;
+			
+			if(Skip.IndexOf(","..Wep..",")>-1)Continue;//If weapon is in skip list, don't add it to any of slots
+			if(Weaps.Find(Weap)==Weaps.Size() && (CurWeaps.Find(Weap)==CurWeaps.Size()||!CheckCur) )Weaps.Push(Weap);
+			else i=0;
+			if(CWar.Length()<1)Break;
+		}
+	}
+	
+    override void PlayerEntered(PlayerEvent e)
+    {
+		For(int i=0;i<10;i++)
+		{
+			Let Cwar = CVar.GetCVar("MRS_Change"..i, Players[e.PlayerNumber]);
+			If(Cwar.GetString().Left(1)!=",")Cwar.SetString(","..Cwar.GetString());
+		}
+		Players[e.PlayerNumber].mo.GiveInventoryType("MRS_SlotsChanger");
+		Let Inv = MRS_SlotsChanger(Players[e.PlayerNumber].mo.FindInventory("MRS_SlotsChanger"));
+		
+		CVar Cwar;
+		
+	    for(int i = 0; i < Weapons.Size(); i++)//Add weappons to cvar by weapon's slot variable
+        {
+			if(Inv.AllWeapons.Find(Weapons[i])==Inv.AllWeapons.Size())Inv.AllWeapons.Push(Weapons[i]);
+			else Continue;
+			
+			Let Weap = Weapons[i];
+
+			Bool Skip = false;
+			For(int i1=0;i1<10;i1++)
+			{
+				Cvar Cwar = CVar.GetCVar("MRS_Change"..i1, Players[e.PlayerNumber]);
+				if(CWar.GetString().IndexOf(","..Weap.GetClassName()..",")>-1){Skip = true;Break;}//Skip if weapon is listed in cvar
+			}
+			if(Skip)Continue;
+			
+			if(GetDefaultByType(Weap).SlotNumber>-1 && GetDefaultByType(Weap).SlotNumber<10){
+			
+			CWar = CVar.GetCVar("MRS_Change"..GetDefaultByType(Weap).SlotNumber, Players[e.PlayerNumber]);
+			If(Cwar.GetString().Left(1)!=",")Cwar.SetString(","..Cwar.GetString());
+			Cwar.SetString(Cwar.GetString()..Weap.GetClassName()..",");
+
+			Continue;}
+			else//Default doom weapons slot variable not setted up, so add them manually
+			{
+				int Slot = -1;
+				if(Weap is 'Fist' || Weap is 'Chainsaw')Slot = 1;
+				else if(Weap is 'Pistol')Slot = 2;
+				else if(Weap is 'Shotgun'||Weap is 'SuperShotgun')Slot = 3;
+				else if(Weap is 'Chaingun')Slot = 4;
+				else if(Weap is 'RocketLauncher')Slot = 5;
+				else if(Weap is 'PlasmaRifle')Slot = 6;
+				else if(Weap is 'BFG9000')Slot = 7;
+
+				if(Slot>-1)Cwar = CVar.GetCVar("MRS_Change"..Slot, Players[e.PlayerNumber]);
+				else Continue;
+				//else Cwar = CVar.GetCVar("MRS_Skip", Players[e.PlayerNumber]);
+				If(Cwar.GetString().Left(1)!=",")Cwar.SetString(","..Cwar.GetString());
+				Cwar.SetString(Cwar.GetString()..Weap.GetClassName()..",");
+			}
+		}
+		
+		MRS_AddWeaponsToTokenArrayFromCVar(inv.Weaps1, inv.curweaps, CVar.GetCvar("MRS_Change1", Players[e.PlayerNumber]).GetString(), Players[e.PlayerNumber]);
+		MRS_AddWeaponsToTokenArrayFromCVar(inv.Weaps2, inv.curweaps, CVar.GetCvar("MRS_Change2", Players[e.PlayerNumber]).GetString(), Players[e.PlayerNumber]);
+		MRS_AddWeaponsToTokenArrayFromCVar(inv.Weaps3, inv.curweaps, CVar.GetCvar("MRS_Change3", Players[e.PlayerNumber]).GetString(), Players[e.PlayerNumber]);
+		MRS_AddWeaponsToTokenArrayFromCVar(inv.Weaps4, inv.curweaps, CVar.GetCvar("MRS_Change4", Players[e.PlayerNumber]).GetString(), Players[e.PlayerNumber]);
+		MRS_AddWeaponsToTokenArrayFromCVar(inv.Weaps5, inv.curweaps, CVar.GetCvar("MRS_Change5", Players[e.PlayerNumber]).GetString(), Players[e.PlayerNumber]);
+		MRS_AddWeaponsToTokenArrayFromCVar(inv.Weaps6, inv.curweaps, CVar.GetCvar("MRS_Change6", Players[e.PlayerNumber]).GetString(), Players[e.PlayerNumber]);
+		MRS_AddWeaponsToTokenArrayFromCVar(inv.Weaps7, inv.curweaps, CVar.GetCvar("MRS_Change7", Players[e.PlayerNumber]).GetString(), Players[e.PlayerNumber]);
+		MRS_AddWeaponsToTokenArrayFromCVar(inv.Weaps8, inv.curweaps, CVar.GetCvar("MRS_Change8", Players[e.PlayerNumber]).GetString(), Players[e.PlayerNumber]);
+		MRS_AddWeaponsToTokenArrayFromCVar(inv.Weaps9, inv.curweaps, CVar.GetCvar("MRS_Change9", Players[e.PlayerNumber]).GetString(), Players[e.PlayerNumber]);
+		MRS_AddWeaponsToTokenArrayFromCVar(inv.Weaps0, inv.curweaps, CVar.GetCvar("MRS_Change0", Players[e.PlayerNumber]).GetString(), Players[e.PlayerNumber]);
+		MRS_AddWeaponsToTokenArrayFromCVar(inv.SavedWeapons, inv.curweaps, CVar.GetCvar("MRS_Saved", Players[e.PlayerNumber]).GetString(), Players[e.PlayerNumber], false);
+    }
+}
+
+#include "MRSlotScript/Render.zsc"
+
+Class MRS_SlotsChanger : Inventory
+{
+    array<class<weapon> > Weaps1, Weaps2, Weaps3, Weaps4, Weaps5,
+			Weaps6, Weaps7, Weaps8, Weaps9, Weaps0, Skip;
+	Class<Weapon> Holdin;
+	Array<class<weapon> > AllWeapons, ListedWeapons, CurWeapons, SavedWeapons;
+	bool Editing, OnlyOwned, OnlySkiped, HoldScroll, Searchin, HoldShift, HoldBackSpace, SearchParent;
+	int HoldDelay, PlrInv;
+	
+	String UseKey, AltFireKey, Highlight, SearchStr;
+    Default{Inventory.MaxAmount 1;}
+    
+	
+	bool MRS_CheckWeaponSelectPrev(in array< class<Weapon> > weaps, Class<Weapon> Weap, bool Cycle)
+	{
+		int Slt=weaps.Find(Weap)-1;
+		if(Cycle)Slt = weaps.Size()-1;
+		else if(Slt<0){Return false;}//No weapon in slot, check next slot
+		For(int i1=Slt;i1>-1;i1--)
+		{
+			if(Owner.FindInventory(weaps[i1]) && Owner.Player.ReadyWeapon.GetClass() != weaps[i1])
+				{Owner.A_SelectWeapon(weaps[i1]);Return true;}//Select weapon, terminate function
+		}
+		Return false;
+	}
+	bool MRS_CheckWeaponSelectNext(in array< class<Weapon> > weaps, Class<Weapon> Weap, bool Cycle, int slot, int curslot)
+	{
+		int Slt=weaps.Find(Weap)+1;
+		if(CurSlot==Slot && !Cycle && Slt>=weaps.Size())return false;
+		if(Slt >= weaps.Size() || Cycle)Slt = 0;
+		For(int i1=Slt;i1<weaps.Size();i1++)
+		{
+			if(Owner.FindInventory(weaps[i1]) && Owner.Player.ReadyWeapon.GetClass() != weaps[i1])
+				{Owner.A_SelectWeapon(weaps[i1]);Return true;}
+		}
+		return false;
+	}
+	Void SwitchWeapon(bool Back = false)//Next/Previous weapon
+	{
+		Let Weap = Owner.Player.ReadyWeapon;
+		if(Owner.Player.PendingWeapon != Null && Owner.Player.PendingWeapon.GetClassName() != "Object")Weap = Owner.Player.PendingWeapon;
+		int Slot=-1;
+		While(True)//Which slot is current weapon in
+		{
+			if(Weaps1.Find(Weap.GetClass())!=Weaps1.Size()){Slot = 1;Break;}
+			if(Weaps2.Find(Weap.GetClass())!=Weaps2.Size()){Slot = 2;Break;}
+			if(Weaps3.Find(Weap.GetClass())!=Weaps3.Size()){Slot = 3;Break;}
+			if(Weaps4.Find(Weap.GetClass())!=Weaps4.Size()){Slot = 4;Break;}
+			if(Weaps5.Find(Weap.GetClass())!=Weaps5.Size()){Slot = 5;Break;}
+			if(Weaps6.Find(Weap.GetClass())!=Weaps6.Size()){Slot = 6;Break;}
+			if(Weaps7.Find(Weap.GetClass())!=Weaps7.Size()){Slot = 7;Break;}
+			if(Weaps8.Find(Weap.GetClass())!=Weaps8.Size()){Slot = 8;Break;}
+			if(Weaps9.Find(Weap.GetClass())!=Weaps9.Size()){Slot = 9;Break;}
+			if(Weaps0.Find(Weap.GetClass())!=Weaps0.Size()){Slot = 0;Break;}
+			Break;
+		}
+		if(Slot<0)Return;
+		
+		if(Back)//Switch to previous
+		{
+			Bool Cycle = false;
+			For(int i=Slot;i>-1;i--)
+			{
+				Switch(i)
+				{
+					Case 1:if(MRS_CheckWeaponSelectPrev(Weaps1, Weap.GetClass(), Cycle)) Return; Break;
+					Case 2:if(MRS_CheckWeaponSelectPrev(Weaps2, Weap.GetClass(), Cycle)) Return; Break;
+					Case 3:if(MRS_CheckWeaponSelectPrev(Weaps3, Weap.GetClass(), Cycle)) Return; Break;
+					Case 4:if(MRS_CheckWeaponSelectPrev(Weaps4, Weap.GetClass(), Cycle)) Return; Break;
+					Case 5:if(MRS_CheckWeaponSelectPrev(Weaps5, Weap.GetClass(), Cycle)) Return; Break;
+					Case 6:if(MRS_CheckWeaponSelectPrev(Weaps6, Weap.GetClass(), Cycle)) Return; Break;
+					Case 7:if(MRS_CheckWeaponSelectPrev(Weaps7, Weap.GetClass(), Cycle)) Return; Break;
+					Case 8:if(MRS_CheckWeaponSelectPrev(Weaps8, Weap.GetClass(), Cycle)) Return; Break;
+					Case 9:if(MRS_CheckWeaponSelectPrev(Weaps9, Weap.GetClass(), Cycle)) Return; Break;
+					Case 0:if(MRS_CheckWeaponSelectPrev(Weaps0, Weap.GetClass(), Cycle)) Return; Break;
+				}
+				
+				if(Cycle)Break;
+				if(i<=0){i = 10;Continue;}
+				if(i==Slot+1){i=Slot;Cycle=True;}
+			}
+			Return;
+		}
+		//Switch to next
+		Bool Cycle = false;
+		For(int i=Slot;i<11;i++)
+		{
+			Switch(i)
+			{
+				Case 1:if(MRS_CheckWeaponSelectNext(Weaps1, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
+				Case 2:if(MRS_CheckWeaponSelectNext(Weaps2, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
+				Case 3:if(MRS_CheckWeaponSelectNext(Weaps3, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
+				Case 4:if(MRS_CheckWeaponSelectNext(Weaps4, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
+				Case 5:if(MRS_CheckWeaponSelectNext(Weaps5, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
+				Case 6:if(MRS_CheckWeaponSelectNext(Weaps6, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
+				Case 7:if(MRS_CheckWeaponSelectNext(Weaps7, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
+				Case 8:if(MRS_CheckWeaponSelectNext(Weaps8, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
+				Case 9:if(MRS_CheckWeaponSelectNext(Weaps9, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
+				Case 0:if(MRS_CheckWeaponSelectNext(Weaps0, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
+			}
+			if(Cycle)Break;
+			if(i>=9){i = -1;Continue;}
+			if(i==Slot-1){i=Slot;Cycle=True;}
+		}
+	}
+	
+	bool MRS_CheckWeaponSelect(in array< class<weapon> > weaps, class<Weapon> Weap)
+	{
+		int Slot;
+		Bool Cycle;
+		if(Weap && Weaps.Find(Weap)!=Weaps.Size())Slot = Weaps.Find(Weap);
+		else Slot = Weaps.Size()-1;
+		Cycle=false;
+		For(int i=Slot;i>-1;i--)
+		{
+			if(Owner.FindInventory(Weaps[i]) && Owner.Player.ReadyWeapon.GetClass() != Weaps[i])
+				{Owner.A_SelectWeapon(Weaps[i]);Return true;}
+			if(Cycle && i==Slot)Return false;
+			if(i<1){i=Weaps.Size();Cycle=True;}
+		}
+		Return false;
+	}
+	Void ChangeWeap(int Change)//Selecting weapon thru slot
+	{
+		Let Weap = Owner.Player.ReadyWeapon;
+		if(Owner.Player.PendingWeapon != Null && Owner.Player.PendingWeapon.GetClassName() != "Object")Weap = Owner.Player.PendingWeapon;
+		Switch(Change)
+		{
+			Case 1:if(MRS_CheckWeaponSelect(Weaps1, Weap.GetClass())) Return; Break;
+			Case 2:if(MRS_CheckWeaponSelect(Weaps2, Weap.GetClass())) Return; Break;
+			Case 3:if(MRS_CheckWeaponSelect(Weaps3, Weap.GetClass())) Return; Break;
+			Case 4:if(MRS_CheckWeaponSelect(Weaps4, Weap.GetClass())) Return; Break;
+			Case 5:if(MRS_CheckWeaponSelect(Weaps5, Weap.GetClass())) Return; Break;
+			Case 6:if(MRS_CheckWeaponSelect(Weaps6, Weap.GetClass())) Return; Break;
+			Case 7:if(MRS_CheckWeaponSelect(Weaps7, Weap.GetClass())) Return; Break;
+			Case 8:if(MRS_CheckWeaponSelect(Weaps8, Weap.GetClass())) Return; Break;
+			Case 9:if(MRS_CheckWeaponSelect(Weaps9, Weap.GetClass())) Return; Break;
+			Case 0:if(MRS_CheckWeaponSelect(Weaps0, Weap.GetClass())) Return; Break;
+		}
+	}
+	
+	Override Void Tick()
+	{
+		Super.Tick();
+		//For(int i=0;i<CurWeaps.Size();i++)Console.printf(i.." Blyat "..CurWeaps[i].GetClassName());
+		//Console.Printf("B|lyasd "..CurWeaps.Size());
+		if(CVar.GetCVar("MRS_NewSlotOnPickUp", Owner.Player).GetBool() && GetAge()%Max(1, int(PlrInv*.2))==0)CheckNewWeaps();
+		if(Editing)Customizing();
+		if(WheelOpen)
+		{
+			if(WhelCursor.X>WheelSize*.75)WhelCursor.X = WheelSize*.75;
+			if(WhelCursor.X<-WheelSize*.75)WhelCursor.X = -WheelSize*.75;
+			if(WhelCursor.Y<-WheelSize*.75)WhelCursor.Y = -WheelSize*.75;
+			if(WhelCursor.Y>WheelSize*.75)WhelCursor.Y = WheelSize*.75;
+			Let XVel = Owner.Player.Cmd.Yaw * .01;
+			Let YVel = Owner.Player.Cmd.Pitch * .01;
+			
+			WhelCursor -= (XVel, YVel);
+			
+			Owner.Angle=PlrAngle;
+			Owner.Pitch=PlrPitch;
+			
+			For(int i=0;i<10;i++)
+			{
+				if(WhelCursor.X>WhelSlt[i][0].X&&WhelCursor.X<WhelSlt[i][1].X && WhelCursor.Y>WhelSlt[i][0].Y&&WhelCursor.Y<WhelSlt[i][1].Y)
+				WhelSlot=i;
+			}
+		}
+	}
+	int HighlightDel;
+	Vector2 Mouse;
+	Float PlrAngle, PlrPitch, ScrollPos;
+	Vector2 TipsToggle[2];
+	String PrevHighlight;
+	Void Customizing()
+	{
+		//Console.Printf("MouseX "..int(Mouse.X).." MouseY "..int(Mouse.Y));
+		if(Mouse.X>650)Mouse.X = 650;
+		if(Mouse.X<0)Mouse.X = 0;
+		if(Mouse.Y<0)Mouse.Y =0;
+		if(Mouse.Y>370)Mouse.Y = 370;
+		Let XVel = Owner.Player.Cmd.Yaw * .01;
+		Let YVel = Owner.Player.Cmd.Pitch * .01;
+		
+		Mouse -= (XVel, YVel);
+		
+		Owner.Angle = PlrAngle;
+		Owner.Pitch = PlrPitch;
+		
+		if(HoldScroll){
+			int ListSize = CurWeapons.Size();
+			if(!OnlyOwned)ListSize = ListedWeapons.Size();
+			if(ListSize>1){
+			
+			ScrollPos = Mouse.Y-5 - (24*5/ListSize);
+			if(ScrollPos<0)ScrollPos=0;
+			
+			if(ScrollPos+(24*10/ListSize)>24*10)ScrollPos=24*10-(24*10/ListSize);}
+		}
+		
+		if((Owner.Player.Cmd.Buttons&BT_ALTATTACK && !(Owner.Player.OldButtons&BT_ALTATTACK))||
+		(Owner.Player.Cmd.Buttons&BT_USE && !(Owner.Player.OldButtons&BT_USE)))EditSlot();
+		if(Mouse.X>20 && Mouse.Y >5 && Mouse.Y < 240)HighlightName((Mouse.X - 20, Mouse.Y - 5));
+		else if(Mouse.Y>250 && Owner.Player.ReadyWeapon)Highlight = Owner.Player.Readyweapon.GetTag();
+		else if(Mouse.X>=370 && Mouse.X<380 && Mouse.Y>24*10 && Mouse.Y<24*10+10)Highlight = StringTable.Localize("$MRS_ToggleOwned");
+		else HighLight = "";
+		if(PrevHighlight == Highlight && HighLight != "")HighlightDel++;
+		else HighlightDel=0;
+		PrevHighlight = Highlight;
+		
+		if(Searchin && HoldBackSpace&&SearchStr!="")
+		{
+			if(HoldDelay>0)HoldDelay--;
+				
+			if(HoldDelay>=19||(HoldDelay<1&&GetAge()%2==0))
+			{
+				SearchStr.Remove(SearchStr.Length()-1, 1);
+				UpdateList();
+			}
+		}
+	}
+	
+	Bool MRS_TakeWeaponFromSlot(in array< class<weapon> > weaps, int num)
+	{
+		Array<Class <Weapon> > CurSl;
+		For(int i=0;i<Weaps.Size();i++){if(Weaps[i]&&Owner.FindInventory(Weaps[i])||SavedWeapons.Find(Weaps[i])!=SavedWeapons.Size())CurSl.Push(Weaps[i]);}
+		if(Num>=CurSl.Size())Return false;
+		
+		if(CurSl[Num] is "MRS_EmpySlot"){Weaps.Delete(Weaps.Find(CurSl[Num]));Return true;}
+		Holdin = CurSl[Num];
+		Weaps[Weaps.Find(CurSL[Num])]="MRS_EmpySlot";
+		return true;
+	}
+	Bool MRS_PlaceWeaponInSlot(in array< class<weapon> > Slot, int num, in cvar Cva)
+	{
+		Array<Class <Weapon> > CurSl;
+		For(int i=0;i<Slot.Size();i++){if(Slot[i]&&Owner.FindInventory(Slot[i])||SavedWeapons.Find(Slot[i])!=SavedWeapons.Size())CurSl.Push(Slot[i]);}
+		if(Num>=CurSl.Size())
+		{
+			if(Num<CurSl.Size()+1){Slot.Push(Holdin);Holdin=Null;}
+				else {ClearHoldin();Return true;}
+		}
+		else
+		{
+			Class<Weapon> Bak = CurSl[Num];
+			Slot[Slot.Find(CurSl[Num])] = Holdin;
+			if(!(Bak is "MRS_EmpySlot"))Holdin = Bak;
+			else Holdin = Null;
+		}
+		Array<String> Weaps;
+		For(int i=0;i<Slot.Size();i++)If(Slot[i] && Slot[i] != "MRS_EmpySlot")Weaps.Push(Slot[i].GetClassName());
+
+		String CWar = Cva.GetString();
+		For(int i=0;i<70;i++)
+		{
+			String Wep = CWar.Left(CWar.IndexOf(","));
+			CWar = CWar.Mid(CWar.IndexOf(",")+1);
+			Class<Weapon> Weap = Wep;
+			if(!Weap&&Weaps.Find(Wep)==Weaps.Size())Weaps.Push(Wep);
+			else i=0;
+			if(CWar.Length()<1||CWar.IndexOf(",")<0)Break;
+		}
+		Cva.SetString(",");
+		For(int i=0;i<Weaps.Size();i++)if(Weaps[i]!="")Cva.SetString(Cva.GetString()..Weaps[i]..",");
+		Return true;
+	}
+	Void EditSlot()//Mouse press
+	{
+		if(Mouse.X>0 && Mouse.X<TipsToggle[1].X && Mouse.Y>TipsToggle[0].Y && Mouse.Y<TipsToggle[1].Y){//Toggle tips
+			CVar.GetCVar("MRS_ShowTips", Owner.Player).SetBool(!CVar.GetCVar("MRS_ShowTips", Owner.Player).GetBool());
+			if(!CVar.GetCVar("MRS_ShowTips", Owner.Player).GetBool())
+			{
+				TipsToggle[0] = (0, 243);
+				TipsToggle[1] = (SmallFont.StringWidth(StringTable.Localize("$MRS_ShowTips"))*.6, 250);}
+				else
+				{
+					TipsToggle[0] = (0, 208);
+					Float Max = 0;
+					For(int i=0;i<7;i++)
+					{
+						Let Str = SmallFont.StringWidth(StringTable.Localize("$MRS_Help"..i))*.6;
+						if(Max==0||Max<Str)Max = Str;
+					}
+					TipsToggle[1] = (Max, 250);
+				}
+			Return;
+		}
+		if(Mouse.X>=380 && Mouse.X<386 && Mouse.Y>5 && Mouse.Y<24*10+5)//Scroller
+		{
+			HoldScroll=True;
+		}
+		else if(Mouse.X>=380 && Mouse.X<386 && Mouse.Y>25*10-5 && Mouse.Y<25*10)//Scroll DownBtn
+		{
+			int ListSize = CurWeapons.Size();
+			if(!OnlyOwned)ListSize = ListedWeapons.Size();
+			if(ListSize<1)Return;
+			ScrollPos +=ListSize/10;
+			if(ScrollPos+(24*10/ListSize)>24*10)ScrollPos = 24*10-(24*10/ListSize);
+		}
+		else if(Mouse.X>=380 && Mouse.X<386 && Mouse.Y<5)//Scroll UpBtn
+		{
+			int ListSize = CurWeapons.Size();
+			if(!OnlyOwned)ListSize = ListedWeapons.Size();
+			if(ListSize<1)Return;
+			ScrollPos -=ListSize/10;
+			if(ScrollPos<0)ScrollPos = 0;
+		}
+		else if(Mouse.X>=370 && Mouse.X<380 && Mouse.Y>24*10 && Mouse.Y<24*10+10)//Toggle only owned list
+		{
+			ScrollPos = 0;
+			OnlyOwned = !OnlyOwned;
+			Editing = false;
+			EventHandler.SendNetworkEvent("MRS_Customize");
+		}
+		else if(Mouse.X>=370 && Mouse.X<380 && Mouse.Y>24*10-10 && Mouse.Y<24*10)//Toggle only skiped list
+		{
+			ScrollPos = 0;
+			OnlySkiped = !OnlySkiped;
+			Editing = false;
+			EventHandler.SendNetworkEvent("MRS_Customize");
+		}
+		else if(Mouse.X>385 && Mouse.Y<=24*10.4 && !Holdin)//Take weapon from list
+		{
+			Array< class<weapon> > SkipList;
+			if(OnlySkiped)
+			{
+				String Skip = CVar.GetCVar("MRS_Skip", Owner.Player).GetString();
+				For(int i=0;i<100;i++)
+				{
+					String Wep = Skip.Left(Skip.IndexOf(","));
+					Skip = Skip.Mid(Skip.IndexOf(",")+1);
+					Class<Weapon> Weap = Wep;
+					if(!Weap)Continue;
+
+					if(SkipList.Find(Weap)==SkipList.Size())SkipList.Push(Weap);
+					else i=0;
+					if(Skip.Length()<1)Break;
+				}
+			}
+			
+			Float Scaler = CurWeapons.Size();
+			if(OnlySkiped)Scaler = SkipList.Size();
+			else if(!OnlyOwned)Scaler = ListedWeapons.Size();
+			if(Scaler<1)Return;
+			if(int(Mouse.Y/10+ScrollPos*(Scaler/(26*10)))>=Scaler)Return;
+			Scaler/=26*10;
+			if(OnlySkiped)
+			{
+				Holdin = SkipList[int(Mouse.Y/10+ScrollPos*Scaler)];
+				String CVa = CVar.GetCVar("MRS_Skip", Owner.Player).GetString();
+				CVa.Replace(Holdin.GetClassName()..",", "");
+				CVar.GetCVar("MRS_Skip", Owner.Player).SetString(CVa);
+			}
+			else if(OnlyOwned)Holdin = CurWeapons[int(Mouse.Y/10+ScrollPos*Scaler)];
+			else Holdin = ListedWeapons[int(Mouse.Y/10+ScrollPos*Scaler)];
+			Return;
+		}
+		if(Mouse.X>370 && Mouse.Y<24*10.75 && Mouse.Y>=24*10.5){EventHandler.SendNetworkEvent("MRSlot_SearchEnter"); Return;}
+		if(Mouse.X>370 && Mouse.Y<24*11 && Mouse.Y>=24*10.75)//Toggle search child classes
+		{
+			if(Mouse.X<370+55)SearchParent = false;
+			else SearchParent = True;
+			UpdateList();
+			Return;
+		}
+		
+		if(Mouse.X<20 || Mouse.Y<8)Return;
+		Vector2 Mos = (Mouse.X-20,Mouse.Y-8);
+		Float Block = 40;//Single slot size
+		int Slot = Round((Mos.X+Block*.4)/(Block*.9));
+		int Num = Mos.Y/30;
+		
+		if(!Holdin)//Takin weapon from slot
+		{
+			if(Mouse.Y>250)
+			{
+				Holdin = Owner.Player.ReadyWeapon.GetClass();
+				Return;
+			}
+			//Which weapon in slot
+			Switch(Slot)
+			{
+				Case 1:if(MRS_TakeWeaponFromSlot(Weaps1, Num)) Return; Break;
+				Case 2:if(MRS_TakeWeaponFromSlot(Weaps2, Num)) Return; Break;
+				Case 3:if(MRS_TakeWeaponFromSlot(Weaps3, Num)) Return; Break;
+				Case 4:if(MRS_TakeWeaponFromSlot(Weaps4, Num)) Return; Break;
+				Case 5:if(MRS_TakeWeaponFromSlot(Weaps5, Num)) Return; Break;
+				Case 6:if(MRS_TakeWeaponFromSlot(Weaps6, Num)) Return; Break;
+				Case 7:if(MRS_TakeWeaponFromSlot(Weaps7, Num)) Return; Break;
+				Case 8:if(MRS_TakeWeaponFromSlot(Weaps8, Num)) Return; Break;
+				Case 9:if(MRS_TakeWeaponFromSlot(Weaps9, Num)) Return; Break;
+				Case 10:if(MRS_TakeWeaponFromSlot(Weaps0, Num)) Return; Break;
+			}
+		}
+		
+		else//Placing weapon in slot
+		{
+			Switch(Slot)
+			{
+				Case 1:if(MRS_PlaceWeaponInSlot(Weaps1, Num, cvar.GetCVar("MRS_Change1", owner.Player))) Return; Break;
+				Case 2:if(MRS_PlaceWeaponInSlot(Weaps2, Num, cvar.GetCVar("MRS_Change2", owner.Player))) Return; Break;
+				Case 3:if(MRS_PlaceWeaponInSlot(Weaps3, Num, cvar.GetCVar("MRS_Change3", owner.Player))) Return; Break;
+				Case 4:if(MRS_PlaceWeaponInSlot(Weaps4, Num, cvar.GetCVar("MRS_Change4", owner.Player))) Return; Break;
+				Case 5:if(MRS_PlaceWeaponInSlot(Weaps5, Num, cvar.GetCVar("MRS_Change5", owner.Player))) Return; Break;
+				Case 6:if(MRS_PlaceWeaponInSlot(Weaps6, Num, cvar.GetCVar("MRS_Change6", owner.Player))) Return; Break;
+				Case 7:if(MRS_PlaceWeaponInSlot(Weaps7, Num, cvar.GetCVar("MRS_Change7", owner.Player))) Return; Break;
+				Case 8:if(MRS_PlaceWeaponInSlot(Weaps8, Num, cvar.GetCVar("MRS_Change8", owner.Player))) Return; Break;
+				Case 9:if(MRS_PlaceWeaponInSlot(Weaps9, Num, cvar.GetCVar("MRS_Change9", owner.Player))) Return; Break;
+				Case 10:if(MRS_PlaceWeaponInSlot(Weaps0, Num, cvar.GetCVar("MRS_Change0", owner.Player))) Return; Break;
+			}
+			if(Mos.X>Block*.9*10)
+			{
+				CVar CVa = CVar.GetCVar("MRS_Skip", Owner.Player);
+				if(CVa.GetString().IndexOf(","..Holdin.GetClassName()..",")<0)
+				{
+					CVa.SetString(CVa.GetString()..Holdin.GetClassName()..",");
+				}
+			}
+		}
+		
+		ClearHoldin();
+	}
+	
+	Void MRS_SaveWeapon(in array< class<Weapon> > Slot, int Num)
+	{
+		Array<Class <Weapon> > CurSl;
+		For(int i=0;i<Slot.Size();i++)
+		{
+			if(Slot[i]&& (Owner.FindInventory(Slot[i])) || SavedWeapons.Find(Slot[i])!=SavedWeapons.Size())CurSl.Push(Slot[i]);
+		}
+			
+		if(Num>=CurSl.Size())Return;
+		
+		else
+		{
+			if(SavedWeapons.Find(CurSl[Num])==SavedWeapons.Size())SavedWeapons.Push(CurSl[Num]);
+			else SavedWeapons.Delete(SavedWeapons.Find(CurSl[Num]));
+		}
+	}
+	
+	Void SaveWeapon()
+	{
+		if(Mouse.X<20 || Mouse.Y<8)Return;
+		Vector2 Mos = (Mouse.X-20,Mouse.Y-8);
+		Float Block = 40;
+		
+		int Slot = Round((Mos.X+Block*.4)/(Block*.9));
+		int Num = Mos.Y/30;
+		
+		Switch(Slot)
+		{
+			Case 1:MRS_SaveWeapon(Weaps1, Num);Break;
+			Case 2:MRS_SaveWeapon(Weaps2, Num);Break;
+			Case 3:MRS_SaveWeapon(Weaps3, Num);Break;
+			Case 4:MRS_SaveWeapon(Weaps4, Num);Break;
+			Case 5:MRS_SaveWeapon(Weaps5, Num);Break;
+			Case 6:MRS_SaveWeapon(Weaps6, Num);Break;
+			Case 7:MRS_SaveWeapon(Weaps7, Num);Break;
+			Case 8:MRS_SaveWeapon(Weaps8, Num);Break;
+			Case 9:MRS_SaveWeapon(Weaps9, Num);Break;
+			Case 10:MRS_SaveWeapon(Weaps0, Num);Break;
+		}
+		
+		Array<String> Weaps;
+		For(int i=0;i<SavedWeapons.Size();i++)If(SavedWeapons[i] && SavedWeapons[i] != "MRS_EmpySlot")Weaps.Push(SavedWeapons[i].GetClassName());
+		Let Cva = CVar.GetCVar("MRS_Saved", Owner.Player);
+		String CWar = Cva.GetString();
+		For(int i=0;i<70;i++)
+		{
+			String Wep = CWar.Left(CWar.IndexOf(","));
+			CWar = CWar.Mid(CWar.IndexOf(",")+1);
+			Class<Weapon> Weap = Wep;
+			if(!Weap&&Weaps.Find(Wep)==Weaps.Size())Weaps.Push(Wep);
+			else i=0;
+			if(CWar.Length()<1||CWar.IndexOf(",")<0)Break;
+		}
+		Cva.SetString(",");
+		For(int i=0;i<Weaps.Size();i++)if(Weaps[i]!="")Cva.SetString(Cva.GetString()..Weaps[i]..",");
+	}
+	
+	Void GetKeys()
+	{
+		Int Key1, Key2;
+		[Key1, Key2] = Bindings.GetKeysForCommand("+AltAttack");
+		AltFireKey = Bindings.NameKeys(Key1, Key2);
+		if(AltFireKey.IndexOf(", ")>-1)AltFireKey = AltFireKey.Mid(0, AltFireKey.IndexOf(", "));
+		if(AltFireKey == "")AltFireKey = StringTable.Localize("$MRS_HelpAltAttack");
+		AltFireKey = "\cd"..AltFireKey.."\c-";
+		
+		[Key1, Key2] = Bindings.GetKeysForCommand("+Use");
+		UseKey = Bindings.NameKeys(Key1, Key2);
+		if(UseKey.IndexOf(", ")>-1)UseKey = UseKey.Mid(0, UseKey.IndexOf(", "));
+		if(UseKey == "")UseKey = StringTable.Localize("$MRS_HelpUse");
+		UseKey = "\cd"..UseKey.."\c-";
+	}
+	
+	Void MRS_ClearHoldinSlot(in array< Class<Weapon> > Slot, in cvar Cva)
+	{
+		Array<String> Weaps;
+		For(int i=0;i<Slot.Size();i++)If(Slot[i] && Slot[i] != "MRS_EmpySlot")Weaps.Push(Slot[i].GetClassName());
+		String CWar = Cva.GetString();
+		For(int i=0;i<70;i++)
+		{
+			String Wep = CWar.Left(CWar.IndexOf(","));
+			CWar = CWar.Mid(CWar.IndexOf(",")+1);
+			Class<Weapon> Weap = Wep;
+			if(!Weap&&Weaps.Find(Wep)==Weaps.Size())Weaps.Push(Wep);
+			else i=0;
+			if(CWar.Length()<1||CWar.IndexOf(",")<0)Break;
+		}
+		Cva.SetString(",");
+		For(int i=0;i<Weaps.Size();i++)if(Weaps[i]!="")Cva.SetString(Cva.GetString()..Weaps[i]..",");
+	}
+	Void ClearHoldin()
+	{
+		MRS_ClearHoldinSlot(Weaps1, CVar.GetCVar("MRS_Change1", Owner.Player));
+		MRS_ClearHoldinSlot(Weaps2, CVar.GetCVar("MRS_Change2", Owner.Player));
+		MRS_ClearHoldinSlot(Weaps3, CVar.GetCVar("MRS_Change3", Owner.Player));
+		MRS_ClearHoldinSlot(Weaps4, CVar.GetCVar("MRS_Change4", Owner.Player));
+		MRS_ClearHoldinSlot(Weaps5, CVar.GetCVar("MRS_Change5", Owner.Player));
+		MRS_ClearHoldinSlot(Weaps6, CVar.GetCVar("MRS_Change6", Owner.Player));
+		MRS_ClearHoldinSlot(Weaps7, CVar.GetCVar("MRS_Change7", Owner.Player));
+		MRS_ClearHoldinSlot(Weaps8, CVar.GetCVar("MRS_Change8", Owner.Player));
+		MRS_ClearHoldinSlot(Weaps9, CVar.GetCVar("MRS_Change9", Owner.Player));
+		MRS_ClearHoldinSlot(Weaps0, CVar.GetCVar("MRS_Change0", Owner.Player));
+
+		if(Holdin &&(
+			CVar.GetCVar("MRS_Change1", Owner.Player).GetString().IndexOf(","..Holdin.GetClassName()..",")>-1||
+			CVar.GetCVar("MRS_Change2", Owner.Player).GetString().IndexOf(","..Holdin.GetClassName()..",")>-1||
+			CVar.GetCVar("MRS_Change3", Owner.Player).GetString().IndexOf(","..Holdin.GetClassName()..",")>-1||
+			CVar.GetCVar("MRS_Change4", Owner.Player).GetString().IndexOf(","..Holdin.GetClassName()..",")>-1||
+			CVar.GetCVar("MRS_Change5", Owner.Player).GetString().IndexOf(","..Holdin.GetClassName()..",")>-1||
+			CVar.GetCVar("MRS_Change6", Owner.Player).GetString().IndexOf(","..Holdin.GetClassName()..",")>-1||
+			CVar.GetCVar("MRS_Change7", Owner.Player).GetString().IndexOf(","..Holdin.GetClassName()..",")>-1||
+			CVar.GetCVar("MRS_Change8", Owner.Player).GetString().IndexOf(","..Holdin.GetClassName()..",")>-1||
+			CVar.GetCVar("MRS_Change9", Owner.Player).GetString().IndexOf(","..Holdin.GetClassName()..",")>-1||
+			CVar.GetCVar("MRS_Change0", Owner.Player).GetString().IndexOf(","..Holdin.GetClassName()..",")>-1)){Holdin=Null;Return;}
+		Holdin = Null;
+	}
+	
+	Void UpdateList()
+	{
+		ListedWeapons.Clear();
+		if(SearchStr!=""){
+			if(SearchParent)
+				For(int i=0;i<AllWeapons.Size();i++)
+				{
+					if(AllWeapons[i] is SearchStr)
+					{
+						ListedWeapons.Push(AllWeapons[i]);
+					}
+				}
+			else For(int i=0;i<AllWeapons.Size();i++)
+			{
+				if(String.Format(AllWeapons[i].GetClassName()).MakeLower().IndexOf(SearchStr)>-1)
+				{
+					ListedWeapons.Push(AllWeapons[i]);
+				}
+			}
+		}
+		else For(int i=0;i<AllWeapons.Size();i++)ListedWeapons.Push(AllWeapons[i]);
+	}
+	
+	Void MRS_HighlightNameSlot(in array< class<weapon> > Slot, int Num)
+	{
+		Array<Class <Weapon> > CurSl;
+		For(int i=0;i<Slot.Size();i++){if(Slot[i]&&(Owner.FindInventory(Slot[i])||SavedWeapons.Find(Slot[i])!=SavedWeapons.Size()))CurSl.Push(Slot[i]);}
+		if(Num>=CurSl.Size()){Highlight="";Return;}
+		if(CurSl[Num] is "MRS_EmpySlot")Return;
+		if(Owner.FindInventory(CurSl[Num]))Highlight = Owner.FindInventory(CurSl[Num]).GetTag();
+		else HighLight = GetDefaultByType(CurSl[Num]).GetTag();
+		if(MRS_Debug)HighLight = CurSl[Num].GetClassName();
+	}
+	
+	Void HighlightName(Vector2 Mos)
+	{
+		Float Block = 40;
+		int Num = Mos.Y/30;
+		int Slot = Round((Mos.X+Block*.4)/(Block*.9));
+		HighLight = "";
+		Switch(Slot)
+		{
+			Case 1:MRS_HighlightNameSlot(Weaps1, Num); Break;
+			Case 2:MRS_HighlightNameSlot(Weaps2, Num); Break;
+			Case 3:MRS_HighlightNameSlot(Weaps3, Num); Break;
+			Case 4:MRS_HighlightNameSlot(Weaps4, Num); Break;
+			Case 5:MRS_HighlightNameSlot(Weaps5, Num); Break;
+			Case 6:MRS_HighlightNameSlot(Weaps6, Num); Break;
+			Case 7:MRS_HighlightNameSlot(Weaps7, Num); Break;
+			Case 8:MRS_HighlightNameSlot(Weaps8, Num); Break;
+			Case 9:MRS_HighlightNameSlot(Weaps9, Num); Break;
+			Case 10:MRS_HighlightNameSlot(Weaps0, Num); Break;
+		}
+	}
+	
+	Bool WheelOpen;
+	Vector2 WhelCursor;
+	Int WhelSlot;
+	Vector2 WhelSlt[10][2];//0 - Top Left, 1 - Bottom Right
+	
+	Void OpenWheel()
+	{
+		if(WheelOpen)
+		{
+			if(WhelSlot>-1 && WhelSlot<10)ChangeWeap(WhelSlot);
+			WhelCursor = (0, 0);
+			WhelSlot=-1;
+			WheelOpen = false;
+		}
+		
+		else {WhelCursor = (0,0);WhelSlot=-1;WheelOpen = True;PlrAngle = Owner.Angle;PlrPitch = Owner.Pitch;}
+	}
+	Float WheelSize;
+	Override Void PostBeginPlay()
+	{
+		Float Ang=-145;
+		WheelSize=30;
+		WhelSlot=-1;
+		For(int i=0;i<10;i++)
+		{
+			Ang+=36;
+			WhelSlt[i][0].X = -WheelSize/4 + WheelSize*Cos(Ang);
+			WhelSlt[i][1].X = WhelSlt[i][0].X+WheelSize/2;;
+			WhelSlt[i][0].Y = -WheelSize/4 + WheelSize*Sin(Ang);
+			WhelSlt[i][1].Y = WhelSLt[i][0].Y+WheelSize/2;
+		}
+		UpdateList();
+	}
+	
+	Array<Class <Weapon> > CurWeaps;
+	
+	Void AutoSlot(Class<Weapon> Wep)
+	{
+		if(CurWeaps.Find(Wep)!=CurWeaps.Size())Return;
+		
+		if(SavedWeapons.Find(Wep)!=SavedWeapons.Size()){CurWeaps.Push(Wep); Return;}
+
+		Weaps1.Delete(Weaps1.Find(Wep));
+		Weaps2.Delete(Weaps2.Find(Wep));
+		Weaps3.Delete(Weaps3.Find(Wep));
+		Weaps4.Delete(Weaps4.Find(Wep));
+		Weaps5.Delete(Weaps5.Find(Wep));
+		Weaps6.Delete(Weaps6.Find(Wep));
+		Weaps7.Delete(Weaps7.Find(Wep));
+		Weaps8.Delete(Weaps8.Find(Wep));
+		Weaps9.Delete(Weaps9.Find(Wep));
+		Weaps0.Delete(Weaps0.Find(Wep));
+		
+		if(MRS_Handler(EventHandler.Find("MRS_Handler")).MRS_CheckNSH(Wep.GetClassName()))Return;
+		
+		String Skip = CVar.GetCVar("MRS_Skip", Owner.Player).GetString();
+		if(Skip.IndexOf(","..Wep.GetClassName()..",")>-1)Return;
+		
+		int Slot[10], Slt;
+		For(int i=0;i<Weaps1.Size();i++){if(Owner.FindInventory(Weaps1[i]))Slot[0]++;}
+		For(int i=0;i<Weaps2.Size();i++){if(Owner.FindInventory(Weaps2[i]))Slot[1]++;}
+		For(int i=0;i<Weaps3.Size();i++){if(Owner.FindInventory(Weaps3[i]))Slot[2]++;}
+		For(int i=0;i<Weaps4.Size();i++){if(Owner.FindInventory(Weaps4[i]))Slot[3]++;}
+		For(int i=0;i<Weaps5.Size();i++){if(Owner.FindInventory(Weaps5[i]))Slot[4]++;}
+		For(int i=0;i<Weaps6.Size();i++){if(Owner.FindInventory(Weaps6[i]))Slot[5]++;}
+		For(int i=0;i<Weaps7.Size();i++){if(Owner.FindInventory(Weaps7[i]))Slot[6]++;}
+		For(int i=0;i<Weaps8.Size();i++){if(Owner.FindInventory(Weaps8[i]))Slot[7]++;}
+		For(int i=0;i<Weaps9.Size();i++){if(Owner.FindInventory(Weaps9[i]))Slot[8]++;}
+		For(int i=0;i<Weaps0.Size();i++){if(Owner.FindInventory(Weaps0[i]))Slot[9]++;}
+		
+		if(CVar.GetCVar("MRS_AutoSkipFirstSlot", Owner.Player).GetBool() &&
+			(GetDefaultByType(Wep).SlotNumber==1||GetDefaultByType(Wep).bMeleeWeapon))
+		{
+			Weaps1.Push(Wep);Slt=1;
+		}
+		else Switch(CVar.GetCVar("MRS_MaxAutoSlots", Owner.player).Getint())
+		{
+			Case 10:if(Slot[8]>Slot[9]){Weaps0.Push(Wep);Slt=0;Break;}
+			Case 9:if(Slot[7]>Slot[8]){Weaps9.Push(Wep);Slt=9;Break;}
+			Case 8:if(Slot[6]>Slot[7]){Weaps8.Push(Wep);Slt=8;Break;}
+			Case 7:if(Slot[5]>Slot[6]){Weaps7.Push(Wep);Slt=7;Break;}
+			Case 6:if(Slot[4]>Slot[5]){Weaps6.Push(Wep);Slt=6;Break;}
+			Case 5:if(Slot[3]>Slot[4]){Weaps5.Push(Wep);Slt=5;Break;}
+			Case 4:if(Slot[2]>Slot[3]){Weaps4.Push(Wep);Slt=4;Break;}
+			Case 3:if(Slot[1]>Slot[2]){Weaps3.Push(Wep);Slt=3;Break;}
+			Case 2:if(Slot[0]>Slot[1]){Weaps2.Push(Wep);Slt=2;Break;}
+			Default:
+				if(!CVar.GetCVar("MRS_AutoSkipFirstSlot", Owner.Player).GetBool()){Weaps1.Push(Wep);Slt=1;Console.Printf("QAFG");}
+		}
+		CurWeaps.Push(Wep);
+		//Console.printf("Event "..Wep.GetClassName().." "..Slt);
+		EventHandler.SendInterfaceEvent(Owner.PlayerNumber(), "MRS_NewWeapon", Slt);
+	}
+	
+	Void CheckNewWeaps()
+	{
+		if(GetAge()<3)Return;
+		For(int i=0;i<CurWeaps.Size();i++){if(!Owner.FindInventory(CurWeaps[i]) && SavedWeapons.Find(CurWeaps[i])==SavedWeapons.Size()){CurWeaps.Delete(i);i--;}}
+		
+		Let item = Owner.Inv;
+		PlrInv=0;
+		While(item!=Null)
+		{
+			PlrInv++;
+			if(item is 'Weapon' && Weapon(item).SlotNumber>-1 && CurWeaps.Find(item.GetClassName())==CurWeaps.Size()
+				&& SavedWeapons.Find(item.GetClassName())==SavedWeapons.Size())
+			{
+				AutoSlot(item.GetClassName());
+			}
+			item = item.inv;
+		}
+		//Console.Printf(""..PlrInv);
+	}
+}
+
+Class MRS_EmpySlot : Weapon{}

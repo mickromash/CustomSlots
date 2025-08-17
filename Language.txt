@@ -1,0 +1,77 @@
+[en eng enu]
+MRCustomSlots = "Customizable weapon slots";
+MRS_Customize = "Customize slots";
+MRS_NextWeapon = "Next weapon";
+MRS_PreviousWeapon = "Previous weapon";
+MRS_Slot1 = "Weapon slot 1";
+MRS_Slot2 = "Weapon slot 2";
+MRS_Slot3 = "Weapon slot 3";
+MRS_Slot4 = "Weapon slot 4";
+MRS_Slot5 = "Weapon slot 5";
+MRS_Slot6 = "Weapon slot 6";
+MRS_Slot7 = "Weapon slot 7";
+MRS_Slot8 = "Weapon slot 8";
+MRS_Slot9 = "Weapon slot 9";
+MRS_Slot0 = "Weapon slot 0";
+MRS_Wheel = "Weapons Wheel";
+
+MRS_Help0 = "Click [Left Mouse Button] to grab/place weapon in slot";
+MRS_Help1 = "Click [Alt. Fire] or [Use] to grab/place weapon in slot";
+MRS_Help2 = "(placing the weapon in the empty space under a number or last slot in column will add weapon in column)";
+MRS_Help3 = "Place weapon to the empty space on the screen \cgto delete\c- weapon from list";
+MRS_Help4 = "Place weapon to weapons list to add it to skip list";
+MRS_Help5 = "Press on the \cvcyan\c- area on the bottom of the screen to grab \cgweapon in your hands";
+MRS_Help6 = "If auto weapon slots mode turned on, press RMB on weapon in slot to save it \cd(Press to hide tips)";
+MRS_HelpOr = " or ";
+MRS_HelpAltAttack = "Alt Attack";
+MRS_HelpUse = "Use";
+MRS_ShowTips = "\cdShow tips";
+MRS_ToggleOwned = "Owned only";
+MRS_ToggleSkiped = "Skip list";
+MRS_Search = "Search weapon by ";
+MRS_SearchClass = "class name";
+MRS_SearchParent = "parent class name";
+
+MRS_TouchScreen = "Touchscreen mode";
+MRS_NewSlotOnPickup = "Automatically add new weapon to unused slot";
+MRS_MaxAutoSlots = "Max auto slots";
+MRS_AutoSkipFirstSlot = "Don't auto add weapons in first slot";
+
+[ru rus]
+MRCustomSlots = "Кастомизируемые оружейные слоты";
+MRS_Customize = "Кастомизировать слоты";
+MRS_NextWeapon = "Следующее оружие";
+MRS_PreviousWeapon = "Предыдущие оружие";
+MRS_Slot1 = "Слот 1";
+MRS_Slot2 = "Слот 2";
+MRS_Slot3 = "Слот 3";
+MRS_Slot4 = "Слот 4";
+MRS_Slot5 = "Слот 5";
+MRS_Slot6 = "Слот 6";
+MRS_Slot7 = "Слот 7";
+MRS_Slot8 = "Слот 8";
+MRS_Slot9 = "Слот 9";
+MRS_Slot0 = "Слот 0";
+MRS_Wheel = "Колесо выбора оружия";
+
+MRS_Help0 = "Нажмите [Левую Кнопку Мыши] чтобы взять/положить оружие в слот";
+MRS_Help1 = "Нажмите [Альт. Атаку] или [Использовать] чтобы взять/положить оружие в слот";
+MRS_Help2 = "(нажатие на пустое место прямо под цифрой или последним слотом в столбце добавит оружие в столбец)";
+MRS_Help3 = "Перенесите оружие в пустое место на экране чтобы \cgудалить\c- оружие из списка";
+MRS_Help4 = "Перенесите его в список оружия, чтобы добавить в чёрный список";
+MRS_Help5 = "Нажмите на \cvголубую\c- область для того, чтобы взять \cgоружие в руках";
+MRS_Help6 = "Если авто слоты включены, нажмите ПКМ на оружии в слоте, чтобы сохранить его \cd(Нажмите чтобы скрыть подсказки)";
+MRS_HelpOr = " или ";
+MRS_HelpAltAttack = "Альт. Атаку";
+MRS_HelpUse = "Использовать";
+MRS_ShowTips = "\cdПоказать подсказки";
+MRS_ToggleOwned = "Только приобретённое";
+MRS_ToggleSkiped = "Чёрный список";
+MRS_Search = "Поиск оружия ";
+MRS_SearchClass = "по названию в коде";
+MRS_SearchParent = "по типу (род. класс)";
+
+MRS_TouchScreen = "Сенсорное управление";
+MRS_NewSlotOnPickup = "Автоматически добавлять новое оружие в неиспользуемый слот";
+MRS_MaxAutoSlots = "Макс. автоматических слотов";
+MRS_AutoSkipFirstSlot = "Авто. не добавлять оружие в первый слот";
