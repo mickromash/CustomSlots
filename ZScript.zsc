@@ -88,7 +88,7 @@ Class MRS_Handler : EventHandler
 				Inv.PlrPitch = Inv.Owner.Pitch;
 			}
 		}
-		if(e.name ~== "MRS_OpenWheel"){Inv.OpenWheel();}
+		if(e.name ~== "MRS_OpenWheel"){if(!Inv.Editing)Inv.OpenWheel();}
 		if(e.name ~== "MRS_ScrollDown"){Inv.ScrollPos+=1;
 		int ListSize = Inv.CurWeapons.Size();
 		if(!Inv.OnlyOwned)ListSize = Inv.ListedWeapons.Size();
@@ -204,11 +204,11 @@ Class MRS_Handler : EventHandler
 			if (e.KeyScan == e.Key_Enter)
 			{
 				SendNetworkEvent("MRSlot_SearchEnter");
-				return false;
+				return true;
 			}
 			
 			SendNetworkEvent("MRSlot_SearchInput", e.KeyScan, e.KeyChar);
-			Return True;
+			Return true;
 		}
 		else if(e.Type == e.Type_KeyUp)SendNetworkEvent("MRSlot_KeyUnpress", e.KeyScan);
 		Return false;
@@ -519,10 +519,12 @@ Class MRS_SlotsChanger : Inventory
 		
 		if((Owner.Player.Cmd.Buttons&BT_ALTATTACK && !(Owner.Player.OldButtons&BT_ALTATTACK))||
 		(Owner.Player.Cmd.Buttons&BT_USE && !(Owner.Player.OldButtons&BT_USE)))EditSlot();
-		if(Mouse.X>20 && Mouse.Y >5 && Mouse.Y < 240)HighlightName((Mouse.X - 20, Mouse.Y - 5));
-		else if(Mouse.Y>250 && Owner.Player.ReadyWeapon)Highlight = Owner.Player.Readyweapon.GetTag();
+		if(Mouse.X>20 && Mouse.Y >5 && Mouse.Y < 240-10)HighlightName((Mouse.X - 20, Mouse.Y - 5));
+		else if(Mouse.Y>250 && Mouse.X<370 && Owner.Player.ReadyWeapon)Highlight = Owner.Player.Readyweapon.GetTag();
+		else if(Mouse.X>=370 && Mouse.X<380 && Mouse.Y>24*10-10 && Mouse.Y<=24*10)Highlight = StringTable.Localize("$MRS_ToggleSkiped");
 		else if(Mouse.X>=370 && Mouse.X<380 && Mouse.Y>24*10 && Mouse.Y<24*10+10)Highlight = StringTable.Localize("$MRS_ToggleOwned");
 		else HighLight = "";
+		if(Mouse.X>=370 && Mouse.X<380 && Mouse.Y>24*10-10 && Mouse.Y<=24*10)Highlight = StringTable.Localize("$MRS_ToggleSkiped");
 		if(PrevHighlight == Highlight && HighLight != "")HighlightDel++;
 		else HighlightDel=0;
 		PrevHighlight = Highlight;
@@ -613,16 +615,64 @@ Class MRS_SlotsChanger : Inventory
 		}
 		else if(Mouse.X>=380 && Mouse.X<386 && Mouse.Y>25*10-5 && Mouse.Y<25*10)//Scroll DownBtn
 		{
-			int ListSize = CurWeapons.Size();
-			if(!OnlyOwned)ListSize = ListedWeapons.Size();
+			Array< class<weapon> > SkipList;
+			if(OnlySkiped)
+			{
+				String Skip = CVar.GetCVar("MRS_Skip", Owner.Player).GetString();
+				For(int i=0;i<100;i++)
+				{
+					String Wep = Skip.Left(Skip.IndexOf(","));
+					Skip = Skip.Mid(Skip.IndexOf(",")+1);
+					Class<Weapon> Weap = Wep;
+					if(!Weap)Continue;
+
+					if(SkipList.Find(Weap)==SkipList.Size())SkipList.Push(Weap);
+					else i=0;
+					if(Skip.Length()<1)Break;
+				}
+			}
+			
+			int ListSize = ListedWeapons.Size();
+			if(OnlySkiped)
+			{
+				ListSize = SkipList.Size();
+			}
+			else if(OnlyOwned && SearchStr=="")
+			{
+				ListSize = CurWeapons.Size();
+			}
 			if(ListSize<1)Return;
 			ScrollPos +=ListSize/10;
 			if(ScrollPos+(24*10/ListSize)>24*10)ScrollPos = 24*10-(24*10/ListSize);
 		}
 		else if(Mouse.X>=380 && Mouse.X<386 && Mouse.Y<5)//Scroll UpBtn
 		{
-			int ListSize = CurWeapons.Size();
-			if(!OnlyOwned)ListSize = ListedWeapons.Size();
+			Array< class<weapon> > SkipList;
+			if(OnlySkiped)
+			{
+				String Skip = CVar.GetCVar("MRS_Skip", Owner.Player).GetString();
+				For(int i=0;i<100;i++)
+				{
+					String Wep = Skip.Left(Skip.IndexOf(","));
+					Skip = Skip.Mid(Skip.IndexOf(",")+1);
+					Class<Weapon> Weap = Wep;
+					if(!Weap)Continue;
+
+					if(SkipList.Find(Weap)==SkipList.Size())SkipList.Push(Weap);
+					else i=0;
+					if(Skip.Length()<1)Break;
+				}
+			}
+			
+			int ListSize = ListedWeapons.Size();
+			if(OnlySkiped)
+			{
+				ListSize = SkipList.Size();
+			}
+			else if(OnlyOwned && SearchStr=="")
+			{
+				ListSize = CurWeapons.Size();
+			}
 			if(ListSize<1)Return;
 			ScrollPos -=ListSize/10;
 			if(ScrollPos<0)ScrollPos = 0;
@@ -631,6 +681,7 @@ Class MRS_SlotsChanger : Inventory
 		{
 			ScrollPos = 0;
 			OnlyOwned = !OnlyOwned;
+			if(OnlyOwned)OnlySkiped = false;
 			Editing = false;
 			EventHandler.SendNetworkEvent("MRS_Customize");
 		}
@@ -638,6 +689,7 @@ Class MRS_SlotsChanger : Inventory
 		{
 			ScrollPos = 0;
 			OnlySkiped = !OnlySkiped;
+			if(OnlySkiped)OnlyOwned = false;
 			Editing = false;
 			EventHandler.SendNetworkEvent("MRS_Customize");
 		}
@@ -694,7 +746,7 @@ Class MRS_SlotsChanger : Inventory
 		
 		if(!Holdin)//Takin weapon from slot
 		{
-			if(Mouse.Y>250)
+			if(Mouse.Y>250 && Mouse.X<370)
 			{
 				Holdin = Owner.Player.ReadyWeapon.GetClass();
 				Return;
@@ -865,19 +917,39 @@ Class MRS_SlotsChanger : Inventory
 		ListedWeapons.Clear();
 		if(SearchStr!=""){
 			if(SearchParent)
-				For(int i=0;i<AllWeapons.Size();i++)
+			{
+				if(OnlyOwned) For(int i=0;i<CurWeapons.Size();i++)
+				{
+					if(CurWeapons[i] is SearchStr)
+					{
+						ListedWeapons.Push(CurWeapons[i]);
+					}
+				}
+				else For(int i=0;i<AllWeapons.Size();i++)
 				{
 					if(AllWeapons[i] is SearchStr)
 					{
 						ListedWeapons.Push(AllWeapons[i]);
 					}
 				}
-			else For(int i=0;i<AllWeapons.Size();i++)
+			}
+			else
 			{
-				if(String.Format(AllWeapons[i].GetClassName()).MakeLower().IndexOf(SearchStr)>-1)
-				{
-					ListedWeapons.Push(AllWeapons[i]);
-				}
+				if(OnlyOwned) For(int i=0;i<CurWeapons.Size();i++)
+							{
+								if(String.Format(CurWeapons[i].GetClassName()).MakeLower().IndexOf(SearchStr)>-1)
+								{
+									ListedWeapons.Push(CurWeapons[i]);
+								}
+							}
+					
+				else For(int i=0;i<AllWeapons.Size();i++)
+					{
+						if(String.Format(AllWeapons[i].GetClassName()).MakeLower().IndexOf(SearchStr)>-1)
+						{
+							ListedWeapons.Push(AllWeapons[i]);
+						}
+					}
 			}
 		}
 		else For(int i=0;i<AllWeapons.Size();i++)ListedWeapons.Push(AllWeapons[i]);
@@ -1000,9 +1072,8 @@ Class MRS_SlotsChanger : Inventory
 			Case 5:if(Slot[3]>Slot[4]){Weaps5.Push(Wep);Slt=5;Break;}
 			Case 4:if(Slot[2]>Slot[3]){Weaps4.Push(Wep);Slt=4;Break;}
 			Case 3:if(Slot[1]>Slot[2]){Weaps3.Push(Wep);Slt=3;Break;}
-			Case 2:if(Slot[0]>Slot[1]){Weaps2.Push(Wep);Slt=2;Break;}
-			Default:
-				if(!CVar.GetCVar("MRS_AutoSkipFirstSlot", Owner.Player).GetBool()){Weaps1.Push(Wep);Slt=1;Console.Printf("QAFG");}
+			Case 2:if(Slot[0]>Slot[1]||CVar.GetCVar("MRS_AutoSkipFirstSlot", Owner.Player).GetBool()){Weaps2.Push(Wep);Slt=2;Break;}
+			Default:Weaps1.Push(Wep);Slt=1;
 		}
 		CurWeaps.Push(Wep);
 		//Console.printf("Event "..Wep.GetClassName().." "..Slt);

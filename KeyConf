@@ -16,3 +16,5 @@ addmenukey "$MRS_Slot0" "netevent MRS_ChngSlot 0"
 
 alias +MRS_Wheel "Netevent MRS_OpenWheel"
 alias -MRS_Wheel +MRS_Wheel
+
+alias MRS_Reset "MRS_Change1 ,;MRS_Change2 ,;MRS_Change3 ,;MRS_Change4 ,;MRS_Change5 ,;MRS_Change6 ,;MRS_Change7 ,;MRS_Change8 ,;MRS_Change9 ,;MRS_Change0 ,;MRS_Skip ,Mop,;MRS_Saved ,;"

@@ -108,7 +108,7 @@ Extend Class MRS_Handler
 		{
 			int Slot = JustGettedSlt[i];
 			if(JustGettedSlt[i]==0)Slot = 10;
-			
+			if(Slot>9)Return;
 			if(Posy[Slot]<=0)JustGettedPos[i]-=.5;
 			if(JustGettedPos[i]<-5||JustGetted[i]~=="TNT1A0")
 			{
@@ -209,7 +209,7 @@ Extend Class MRS_Handler
 		MRS_DrawSlot(Inv.Weaps0, Inv, Ofst, 0);
 		
 
-		sb.Fill(Color(30, 0, 170, 200), 0, 250, 999, 600, sb.DI_SCREEN_LEFT_TOP);
+		sb.Fill(Color(30, 0, 170, 200), 0, 250, 370, 600, sb.DI_SCREEN_LEFT_TOP);//ReadyWeapon line
 		//All weapons list
 		Ofst = (DesiredSize.X*.9*10, 0);
 		Array< class<weapon> > SkipList;
@@ -236,7 +236,7 @@ Extend Class MRS_Handler
 			ListSize = SkipList.Size();
 			Scaler = SkipList.Size();
 		}
-		else if(Inv.OnlyOwned)
+		else if(Inv.OnlyOwned && Inv.SearchStr=="")
 		{
 			ListSize = Inv.CurWeapons.Size();
 			Scaler = Inv.CurWeapons.Size();
@@ -245,9 +245,10 @@ Extend Class MRS_Handler
 		Sb.SetClipRect(BasOfs.X+Ofst.X+5, 0, 200, 24*11, sb.DI_SCREEN_LEFT_TOP);
 		For(int i=Inv.ScrollPos*Scaler;i<Inv.ScrollPos*Scaler+25&&i<ListSize;i++)
 		{
-			Let Item = Inv.ListedWeapons[i];
+			Class<Weapon> Item;
 			if(Inv.OnlySkiped)Item = SkipList[i];
-			else if(Inv.OnlyOwned)Item = Inv.CurWeapons[i];
+			else if(Inv.OnlyOwned && Inv.SearchStr=="")Item = Inv.CurWeapons[i];
+			else Item = Inv.ListedWeapons[i];
 			String Namee = GetDefaultByType(Item).GetTag();
 			if(Players[ConsolePlayer].mo.FindInventory(Item))Namee = Players[ConsolePlayer].mo.FindInventory(Item).GetTag();
 			
@@ -367,7 +368,7 @@ Extend Class MRS_Handler
 			String Cursor = CVar.GetCVar("vid_cursor", Players[ConsolePlayer]).GetString();
 			if(!Texman.CheckForTexture(Cursor, Texman.TYPE_ANY) || Cursor == "None")Cursor = "cursor";
 			sb.DrawImage(Cursor, Inv.Mouse, sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_LEFT_TOP, .9, scale: (.7, .7));}
-			if(Inv.HighLightDel>30 && !(Inv.Mouse.X>170 && Inv.Mouse.Y>24*10.5 && Inv.Mouse.Y<=24*11))
+			if(Inv.HighLightDel>30 && !(Inv.Mouse.X>370 && Inv.Mouse.Y>24*10.5 && Inv.Mouse.Y<=24*11))
 			{
 				Float Alph = Inv.HighlightDel - 30;
 				Alph = Alph/5;

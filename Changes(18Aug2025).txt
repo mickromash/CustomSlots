@@ -53,3 +53,5 @@ Improved Not So Hideous Animations compatibility
 
 18.Aug.2025
 Fixed weapons not vanish from cvar when moved from slot
+Fixed auto slots
+Fixed ui
