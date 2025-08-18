@@ -166,7 +166,7 @@ Extend Class MRS_Handler
 				sb.Fill(Color(100,0,Col,0), Inv.WhelSlt[i][0].X, Inv.WhelSlt[i][0].Y, Inv.WhelSlt[i][1].X-Inv.WhelSlt[i][0].X, Inv.WhelSlt[i][1].Y-Inv.WhelSlt[i][0].Y, sb.DI_SCREEN_CENTER);
 			}*/
 
-			sb.Fill(Color(100, 255, 255, 0), Inv.WhelCursor.X-1, Inv.WhelCursor.Y-1, 2, 2, sb.DI_SCREEN_CENTER);
+			if(MRS_Debug)sb.Fill(Color(100, 255, 255, 0), Inv.WhelCursor.X-1, Inv.WhelCursor.Y-1, 2, 2, sb.DI_SCREEN_CENTER);
 			Sb.FullscreenOffsets = OriginalFullscreen;
 			Return;
 		}
