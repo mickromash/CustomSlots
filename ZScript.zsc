@@ -192,7 +192,7 @@ Class MRS_Handler : EventHandler
 	Override Bool InputProcess(InputEvent e)
 	{
 		Let Plr = Players[ConsolePlayer];
-		if(!Plr)Return false;
+		if(!Plr.mo)Return false;
 		if(!Plr.mo.FindInventory("MRS_SlotsChanger"))Return false;
 		Let Inv = MRS_SlotsChanger(Plr.mo.FindInventory("MRS_SlotsChanger"));
 		if(!Inv)Return false;
