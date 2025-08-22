@@ -59,7 +59,7 @@ Extend Class MRS_Handler
 				Ico = Players[ConsolePlayer].mo.FindInventory(Slot[i]).FindState("Spawn").GetSpriteTexture(0,0, (0,0));
 				Size = Texman.GetScaledSize(Ico);
 			}
-			Float Scal = DesiredSize.X*.8/Size.X;
+			Float Scal = DesiredSize.X*.8/Max(1, Size.X);
 			sb.Fill(Color(255, BarCol.R, BarCol.G, BarCol.B), BasOfs.X+Ofst.X, BasOfs.Y+Ofst.Y, DesiredSize.X, DesiredSize.Y, sb.DI_SCREEN_LEFT_TOP);
 			sb.Fill(Color(255, int(BarCol.R*.75), int(BarCol.G*.75), int(BarCol.B*.75)), BasOfs.X+Ofst.X+DesiredSize.X*.1, BasOfs.Y+Ofst.Y+DesiredSize.Y*.1, DesiredSize.X-DesiredSize.X*.2, DesiredSize.Y-DesiredSize.Y*.2, sb.DI_SCREEN_LEFT_TOP);
 			sb.DrawImage(Texman.GetName(Ico), Ofst+BasOfs + (DesiredSize.X*.5, DesiredSize.Y*.5), sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_CENTER, 1, Scale: (1,1)*Scal);
@@ -67,7 +67,7 @@ Extend Class MRS_Handler
 			String Nam = GetDefaultByType(Slot[i]).GetTag();
 			if(Players[ConsolePlayer].mo.FindInventory(Slot[i]))Nam = Players[ConsolePlayer].mo.FindInventory(Slot[i]).GetTag();
 			Float TextSize = SmallFont.StringWidth(Nam)*1.2;
-			Scal = DesiredSize.X/TextSize;
+			Scal = DesiredSize.X/Max(1, TextSize);
 			
 			if(!(Slot[i] is "MRS_EmpySlot"))sb.DrawString(SmalFont, Nam, BasOfs+Ofst+(DesiredSize.X/2, DesiredSize.Y*.8), sb.DI_SCREEN_LEFT_TOP|sb.DI_TEXT_ALIGN_CENTER, Font.CR_UNTRANSLATED, 1, Scale: (Min(.5, Scal), .5));
 			Ofst.Y += DesiredSize.Y;
@@ -124,7 +124,7 @@ Extend Class MRS_Handler
 			TextureID Ico = Texman.CheckForTexture(JustGetted[i]);
 			Scalee = Texman.GetScaledSize(Ico);
 			Scalee.Y = Texman.CheckRealHeight(Ico);
-			DownScale = Min(2, 40/Scalee.X);
+			DownScale = Min(2, 40/Max(1, Scalee.X));
 			
 			
 			sb.DrawImage(JustGetted[i], (15+Slot*40, Posy[Slot]), sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_TOP, Min(SlotAlph, (JustGettedPos[i]+5)/5), scale:(1, 1)*DownScale);
@@ -252,8 +252,8 @@ Extend Class MRS_Handler
 			String Namee = GetDefaultByType(Item).GetTag();
 			if(Players[ConsolePlayer].mo.FindInventory(Item))Namee = Players[ConsolePlayer].mo.FindInventory(Item).GetTag();
 			
-			Float Scal = BigFont.StringWidth(Namee);
-			if(Scal==0)Scal=.001;
+			Float Scal = Max(1, BigFont.StringWidth(Namee));
+			
 			Scal = Min(.4, 185/Scal*.4);
 			int StrSize = BigFont.StringWidth(Namee)*Scal;
 			Color BarCol = Color(255, 0, 50, 100);
@@ -282,8 +282,8 @@ Extend Class MRS_Handler
 			String Skip = CVar.GetCVar("MRS_Skip", Players[ConsolePlayer]).GetString();
 			if(Skip.IndexOf(","..Item.GetClassName()..",")>-1)Sb.Fill(Color(250, 200,0,0), BasOfs.X+Ofst.X+6, 1+(i-Inv.ScrollPos*Scaler)*10, 12, 8, sb.DI_SCREEN_LEFT_TOP);
 			
-			Scal = 11/Size.Y;
-			if(Size.X>Size.Y)Scal = 11/Size.X;
+			Scal = 11/Max(1, Size.Y);
+			if(Size.X>Size.Y)Scal = 11/Max(1, Size.X);
 			sb.DrawImage(Texman.GetName(Ico), Ofst+BasOfs+(6, 10*(i-Inv.ScrollPos*Scaler)), sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_LEFT, 1, Scale: (1,1)*Scal);
 		}
 		sb.ClearClipRect();
@@ -334,7 +334,7 @@ Extend Class MRS_Handler
 		sb.Fill(ButtonCol, BasOfs.X+Ofst.X-9.5, 25*10+6.5, 55, 5, sb.DI_SCREEN_LEFT_TOP);
 		
 		String Filter = StringTable.Localize("$MRS_SearchClass");
-		Float Scaly = SmallFont.StringWidth(Filter);
+		Float Scaly = Max(1, SmallFont.StringWidth(Filter));
 		Scaly = Min(.4, 20/(Scaly*.4));
 		sb.DrawString(SmalFont, Filter, (BasOfs.X+Ofst.X-9.5+27, 25*10+7), sb.DI_SCREEN_LEFT_TOP|sb.DI_TEXT_ALIGN_CENTER, Font.CR_UNTRANSLATED, Inv.SearchParent?.5:1, scale:(Scaly, .45));
 		

@@ -126,8 +126,8 @@ Class MRS_Handler : EventHandler
 			if(Inv.ScrollPos+(24*10/ListSize)>24*10)Inv.ScrollPos=24*10-(24*10/ListSize);}
 			
 		if(e.name ~== "MRS_ScrollUp"){Inv.ScrollPos-=1;if(Inv.ScrollPos<0)Inv.ScrollPos=0;}
-		if(e.name ~== "MRS_UpdateMouse"){
-			Inv.Mouse = (e.args[0]/Cvar.GetCVar("hud_scale", Inv.Owner.Player).GetInt(), e.args[1]/Cvar.GetCVar("hud_scale", Inv.Owner.Player).GetInt());}
+		if(e.name ~== "MRS_UpdateMouse"){int Scal = Max(1, Cvar.GetCVar("hud_scale", Inv.Owner.Player).GetInt());
+			Inv.Mouse = (e.args[0]/Scal, e.args[1]/Scal);}
 		
 		if(e.name ~== "MRS_MPress")Inv.EditSlot();
 		if(e.name ~== "MRS_MUnPress")Inv.HoldScroll = false;
