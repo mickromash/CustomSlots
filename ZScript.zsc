@@ -72,15 +72,15 @@ Class MRS_Handler : EventHandler
 						if(Inv.Owner.FindInventory(Inv.AllWeapons[i]))Inv.CurWeapons.Push(Inv.AllWeapons[i]);
 					}
 				}
-				Inv.TipsToggle[0] = (0, 243);
-				Inv.TipsToggle[1] = (SmallFont.StringWidth(StringTable.Localize("$MRS_ShowTips"))*.6, 250);
+				Inv.TipsToggle[0] = (0, 245);
+				Inv.TipsToggle[1] = (SmallFont.StringWidth(StringTable.Localize("$MRS_ShowTips").." ")*.4, 250);
 				if(CVar.GetCVar("MRS_ShowTips", Inv.Owner.Player).GetBool())
 				{
 					Inv.TipsToggle[0] = (0, 208);
 					Float Max = 0;
 					For(int i=0;i<7;i++)
 					{
-						Let Str = SmallFont.StringWidth(StringTable.Localize("$MRS_Help"..i))*.6;
+						Let Str = SmallFont.StringWidth(StringTable.Localize("$MRS_Help"..i).." ")*.4;
 						if(Max==0||Max<Str)Max = Str;
 					}
 					Inv.TipsToggle[1] = (Max, 250);
@@ -126,8 +126,8 @@ Class MRS_Handler : EventHandler
 			if(Inv.ScrollPos+(24*10/ListSize)>24*10)Inv.ScrollPos=24*10-(24*10/ListSize);}
 			
 		if(e.name ~== "MRS_ScrollUp"){Inv.ScrollPos-=1;if(Inv.ScrollPos<0)Inv.ScrollPos=0;}
-		if(e.name ~== "MRS_UpdateMouse"){int Scal = Max(1, Cvar.GetCVar("hud_scale", Inv.Owner.Player).GetInt());
-			Inv.Mouse = (e.args[0]/Scal, e.args[1]/Scal);}
+		
+		if(e.name ~== "MRS_UpdateMouse"){Inv.Mouse = (e.args[0], e.args[1]);}
 		
 		if(e.name ~== "MRS_MPress")Inv.EditSlot();
 		if(e.name ~== "MRS_MUnPress")Inv.HoldScroll = false;
@@ -217,7 +217,10 @@ Class MRS_Handler : EventHandler
 		if(e.Type == e.Type_LButtonDown)SendNetworkEvent("MRS_MPress");
 		if(e.Type == e.Type_LButtonUp)SendNetworkEvent("MRS_MUnPress");
 		if(e.Type == e.Type_RButtonDown)SendNetworkEvent("MRS_MRPress");
-		SendNetworkEvent("MRS_UpdateMouse", e.MouseX, e.MouseY);
+		
+		Vector2 BaseScale = StatusBar.GetHUDScale();
+		Vector2 HUDScale = Vec2Div((4, 4), BaseScale);
+		SendNetworkEvent("MRS_UpdateMouse", e.MouseX/BaseScale.X/HUDScale.X, e.MouseY/BaseScale.Y/HUDScale.Y);
 		Return false;
 	}
 	
@@ -651,15 +654,15 @@ Class MRS_SlotsChanger : Inventory
 			CVar.GetCVar("MRS_ShowTips", Owner.Player).SetBool(!CVar.GetCVar("MRS_ShowTips", Owner.Player).GetBool());
 			if(!CVar.GetCVar("MRS_ShowTips", Owner.Player).GetBool())
 			{
-				TipsToggle[0] = (0, 243);
-				TipsToggle[1] = (SmallFont.StringWidth(StringTable.Localize("$MRS_ShowTips"))*.6, 250);}
+				TipsToggle[0] = (0, 245);
+				TipsToggle[1] = (SmallFont.StringWidth(StringTable.Localize("$MRS_ShowTips").." ")*.4, 250);}
 				else
 				{
 					TipsToggle[0] = (0, 208);
 					Float Max = 0;
 					For(int i=0;i<7;i++)
 					{
-						Let Str = SmallFont.StringWidth(StringTable.Localize("$MRS_Help"..i))*.6;
+						Let Str = SmallFont.StringWidth(StringTable.Localize("$MRS_Help"..i).." ")*.4;
 						if(Max==0||Max<Str)Max = Str;
 					}
 					TipsToggle[1] = (Max, 250);

@@ -59,3 +59,4 @@ Fixed ui
 22.Aug.2025
 Fixed crash when weapon list size is lower than one
 Fixed all possible divisions by zero
+Ui now ignores hud scaling
