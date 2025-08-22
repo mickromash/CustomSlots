@@ -55,3 +55,6 @@ Improved Not So Hideous Animations compatibility
 Fixed weapons not vanish from cvar when moved from slot
 Fixed auto slots
 Fixed ui
+
+22.Aug.2025
+Fixed crash when weapon list size is lower than one

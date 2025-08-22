@@ -44,8 +44,9 @@ Class MRS_Handler : EventHandler
 	{
 		if(!Players[e.Player].mo || !Players[e.Player].mo.FindInventory("MRS_SlotsChanger"))Return;
 		Let Inv = MRS_SlotsChanger(Players[e.Player].mo.FindInventory("MRS_SlotsChanger"));
-		if(e.name ~== "Cur")
-		{For(int i=0;i<Inv.CurWeaps.Size();i++)Console.Printf(i.." "..Inv.CurWeaps[i].GetClassName());}
+		
+//		if(e.name ~== "Cur")
+//			{For(int i=0;i<Inv.CurWeaps.Size();i++)Console.Printf(i.." "..Inv.CurWeaps[i].GetClassName());}
 		if(e.name ~== "MRS_Switch")
 		{
 			Inv.SwitchWeapon((e.Args[0]>0)?false:True);
@@ -54,6 +55,7 @@ Class MRS_Handler : EventHandler
 		{
 			Inv.ChangeWeap(e.Args[0]);
 		}
+		
 		if(e.name ~== "MRS_Customize")
 		{
 			Inv.Editing = !Inv.Editing;
@@ -89,13 +91,43 @@ Class MRS_Handler : EventHandler
 			}
 		}
 		if(e.name ~== "MRS_OpenWheel"){if(!Inv.Editing)Inv.OpenWheel();}
-		if(e.name ~== "MRS_ScrollDown"){Inv.ScrollPos+=1;
-		int ListSize = Inv.CurWeapons.Size();
-		if(!Inv.OnlyOwned)ListSize = Inv.ListedWeapons.Size();
-		if(Inv.ScrollPos+(24*10/ListSize)>24*10)Inv.ScrollPos=24*10-(24*10/ListSize);}
+		
+		if(e.name ~== "MRS_ScrollDown"){
+			Inv.ScrollPos+=1;
+			
+			Array< class<weapon> > SkipList;
+			if(Inv.OnlySkiped)
+			{
+				String Skip = CVar.GetCVar("MRS_Skip", Players[e.Player]).GetString();
+				For(int i=0;i<100;i++)
+				{
+					String Wep = Skip.Left(Skip.IndexOf(","));
+					Skip = Skip.Mid(Skip.IndexOf(",")+1);
+					Class<Weapon> Weap = Wep;
+					if(!Weap)Continue;
+
+					if(SkipList.Find(Weap)==SkipList.Size())SkipList.Push(Weap);
+					else i=0;
+					if(Skip.Length()<1)Break;
+				}
+			}
+			
+			int ListSize = Inv.ListedWeapons.Size();
+			if(Inv.OnlySkiped)
+			{
+				ListSize = SkipList.Size();
+			}
+			else if(Inv.OnlyOwned && Inv.SearchStr=="")
+			{
+				ListSize = Inv.CurWeapons.Size();
+			}
+			ListSize = Max(1, ListSize);
+			
+			if(Inv.ScrollPos+(24*10/ListSize)>24*10)Inv.ScrollPos=24*10-(24*10/ListSize);}
+			
 		if(e.name ~== "MRS_ScrollUp"){Inv.ScrollPos-=1;if(Inv.ScrollPos<0)Inv.ScrollPos=0;}
 		if(e.name ~== "MRS_UpdateMouse"){
-		Inv.Mouse = (e.args[0]/Cvar.GetCVar("hud_scale", Inv.Owner.Player).GetInt(), e.args[1]/Cvar.GetCVar("hud_scale", Inv.Owner.Player).GetInt());}
+			Inv.Mouse = (e.args[0]/Cvar.GetCVar("hud_scale", Inv.Owner.Player).GetInt(), e.args[1]/Cvar.GetCVar("hud_scale", Inv.Owner.Player).GetInt());}
 		
 		if(e.name ~== "MRS_MPress")Inv.EditSlot();
 		if(e.name ~== "MRS_MUnPress")Inv.HoldScroll = false;
@@ -507,14 +539,39 @@ Class MRS_SlotsChanger : Inventory
 		Owner.Pitch = PlrPitch;
 		
 		if(HoldScroll){
-			int ListSize = CurWeapons.Size();
-			if(!OnlyOwned)ListSize = ListedWeapons.Size();
-			if(ListSize>1){
+			
+			Array< class<weapon> > SkipList;
+			if(OnlySkiped)
+			{
+				String Skip = CVar.GetCVar("MRS_Skip", Owner.Player).GetString();
+				For(int i=0;i<100;i++)
+				{
+					String Wep = Skip.Left(Skip.IndexOf(","));
+					Skip = Skip.Mid(Skip.IndexOf(",")+1);
+					Class<Weapon> Weap = Wep;
+					if(!Weap)Continue;
+
+					if(SkipList.Find(Weap)==SkipList.Size())SkipList.Push(Weap);
+					else i=0;
+					if(Skip.Length()<1)Break;
+				}
+			}
+			
+			int ListSize = ListedWeapons.Size();
+			if(OnlySkiped)
+			{
+				ListSize = SkipList.Size();
+			}
+			else if(OnlyOwned && SearchStr=="")
+			{
+				ListSize = CurWeapons.Size();
+			}
+			ListSize = Max(1, ListSize);
 			
 			ScrollPos = Mouse.Y-5 - (24*5/ListSize);
 			if(ScrollPos<0)ScrollPos=0;
-			
-			if(ScrollPos+(24*10/ListSize)>24*10)ScrollPos=24*10-(24*10/ListSize);}
+		
+			if(ScrollPos+(24*10/ListSize)>24*10)ScrollPos=24*10-(24*10/ListSize);
 		}
 		
 		if((Owner.Player.Cmd.Buttons&BT_ALTATTACK && !(Owner.Player.OldButtons&BT_ALTATTACK))||
@@ -641,7 +698,7 @@ Class MRS_SlotsChanger : Inventory
 			{
 				ListSize = CurWeapons.Size();
 			}
-			if(ListSize<1)Return;
+			ListSize = Max(1, ListSize);
 			ScrollPos +=ListSize/10;
 			if(ScrollPos+(24*10/ListSize)>24*10)ScrollPos = 24*10-(24*10/ListSize);
 		}
