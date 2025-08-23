@@ -365,26 +365,28 @@ Class MRS_SlotsChanger : Inventory
     Default{Inventory.MaxAmount 1;}
     
 	
-	bool MRS_CheckWeaponSelectPrev(in array< class<Weapon> > weaps, Class<Weapon> Weap, bool Cycle)
+	bool MRS_CheckWeaponSelectPrev(in array< class<Weapon> > weaps, Weapon Weap, bool Cycle)
 	{
-		int Slt=weaps.Find(Weap)-1;
+		int Slt = Weaps.Size()-1;
+		if(Weap)Slt = weaps.Find(Weap.GetClass())-1;
 		if(Cycle)Slt = weaps.Size()-1;
 		else if(Slt<0){Return false;}//No weapon in slot, check next slot
 		For(int i1=Slt;i1>-1;i1--)
 		{
-			if(Owner.FindInventory(weaps[i1]) && Owner.Player.ReadyWeapon.GetClass() != weaps[i1])
+			if(Owner.FindInventory(weaps[i1]) && Weap && Weap.GetClass() != weaps[i1])
 				{Owner.A_SelectWeapon(weaps[i1]);Return true;}//Select weapon, terminate function
 		}
 		Return false;
 	}
-	bool MRS_CheckWeaponSelectNext(in array< class<Weapon> > weaps, Class<Weapon> Weap, bool Cycle, int slot, int curslot)
+	bool MRS_CheckWeaponSelectNext(in array< class<Weapon> > weaps, Weapon Weap, bool Cycle, int slot, int curslot)
 	{
-		int Slt=weaps.Find(Weap)+1;
+		int Slt = 0;
+		if(Weap)Slt = weaps.Find(Weap.GetClass())+1;
 		if(CurSlot==Slot && !Cycle && Slt>=weaps.Size())return false;
 		if(Slt >= weaps.Size() || Cycle)Slt = 0;
 		For(int i1=Slt;i1<weaps.Size();i1++)
 		{
-			if(Owner.FindInventory(weaps[i1]) && Owner.Player.ReadyWeapon.GetClass() != weaps[i1])
+			if(Owner.FindInventory(weaps[i1]) && Weap && Weap.GetClass() != weaps[i1])
 				{Owner.A_SelectWeapon(weaps[i1]);Return true;}
 		}
 		return false;
@@ -392,9 +394,10 @@ Class MRS_SlotsChanger : Inventory
 	Void SwitchWeapon(bool Back = false)//Next/Previous weapon
 	{
 		Let Weap = Owner.Player.ReadyWeapon;
-		if(Owner.Player.PendingWeapon != Null && Owner.Player.PendingWeapon.GetClassName() != "Object")Weap = Owner.Player.PendingWeapon;
+		
+		if(Owner.Player.PendingWeapon && Owner.Player.PendingWeapon.GetClassName() != "Object")Weap = Owner.Player.PendingWeapon;
 		int Slot=-1;
-		While(True)//Which slot is current weapon in
+		if(Weap)While(True)//Which slot is current weapon in
 		{
 			if(Weaps1.Find(Weap.GetClass())!=Weaps1.Size()){Slot = 1;Break;}
 			if(Weaps2.Find(Weap.GetClass())!=Weaps2.Size()){Slot = 2;Break;}
@@ -408,6 +411,7 @@ Class MRS_SlotsChanger : Inventory
 			if(Weaps0.Find(Weap.GetClass())!=Weaps0.Size()){Slot = 0;Break;}
 			Break;
 		}
+		else Slot = 0;
 		if(Slot<0)Return;
 		
 		if(Back)//Switch to previous
@@ -417,16 +421,16 @@ Class MRS_SlotsChanger : Inventory
 			{
 				Switch(i)
 				{
-					Case 1:if(MRS_CheckWeaponSelectPrev(Weaps1, Weap.GetClass(), Cycle)) Return; Break;
-					Case 2:if(MRS_CheckWeaponSelectPrev(Weaps2, Weap.GetClass(), Cycle)) Return; Break;
-					Case 3:if(MRS_CheckWeaponSelectPrev(Weaps3, Weap.GetClass(), Cycle)) Return; Break;
-					Case 4:if(MRS_CheckWeaponSelectPrev(Weaps4, Weap.GetClass(), Cycle)) Return; Break;
-					Case 5:if(MRS_CheckWeaponSelectPrev(Weaps5, Weap.GetClass(), Cycle)) Return; Break;
-					Case 6:if(MRS_CheckWeaponSelectPrev(Weaps6, Weap.GetClass(), Cycle)) Return; Break;
-					Case 7:if(MRS_CheckWeaponSelectPrev(Weaps7, Weap.GetClass(), Cycle)) Return; Break;
-					Case 8:if(MRS_CheckWeaponSelectPrev(Weaps8, Weap.GetClass(), Cycle)) Return; Break;
-					Case 9:if(MRS_CheckWeaponSelectPrev(Weaps9, Weap.GetClass(), Cycle)) Return; Break;
-					Case 0:if(MRS_CheckWeaponSelectPrev(Weaps0, Weap.GetClass(), Cycle)) Return; Break;
+					Case 1:if(MRS_CheckWeaponSelectPrev(Weaps1, Weap, Cycle)) Return; Break;
+					Case 2:if(MRS_CheckWeaponSelectPrev(Weaps2, Weap, Cycle)) Return; Break;
+					Case 3:if(MRS_CheckWeaponSelectPrev(Weaps3, Weap, Cycle)) Return; Break;
+					Case 4:if(MRS_CheckWeaponSelectPrev(Weaps4, Weap, Cycle)) Return; Break;
+					Case 5:if(MRS_CheckWeaponSelectPrev(Weaps5, Weap, Cycle)) Return; Break;
+					Case 6:if(MRS_CheckWeaponSelectPrev(Weaps6, Weap, Cycle)) Return; Break;
+					Case 7:if(MRS_CheckWeaponSelectPrev(Weaps7, Weap, Cycle)) Return; Break;
+					Case 8:if(MRS_CheckWeaponSelectPrev(Weaps8, Weap, Cycle)) Return; Break;
+					Case 9:if(MRS_CheckWeaponSelectPrev(Weaps9, Weap, Cycle)) Return; Break;
+					Case 0:if(MRS_CheckWeaponSelectPrev(Weaps0, Weap, Cycle)) Return; Break;
 				}
 				
 				if(Cycle)Break;
@@ -441,16 +445,16 @@ Class MRS_SlotsChanger : Inventory
 		{
 			Switch(i)
 			{
-				Case 1:if(MRS_CheckWeaponSelectNext(Weaps1, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
-				Case 2:if(MRS_CheckWeaponSelectNext(Weaps2, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
-				Case 3:if(MRS_CheckWeaponSelectNext(Weaps3, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
-				Case 4:if(MRS_CheckWeaponSelectNext(Weaps4, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
-				Case 5:if(MRS_CheckWeaponSelectNext(Weaps5, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
-				Case 6:if(MRS_CheckWeaponSelectNext(Weaps6, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
-				Case 7:if(MRS_CheckWeaponSelectNext(Weaps7, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
-				Case 8:if(MRS_CheckWeaponSelectNext(Weaps8, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
-				Case 9:if(MRS_CheckWeaponSelectNext(Weaps9, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
-				Case 0:if(MRS_CheckWeaponSelectNext(Weaps0, Weap.GetClass(), Cycle, Slot, i)) Return; Break;
+				Case 1:if(MRS_CheckWeaponSelectNext(Weaps1, Weap, Cycle, Slot, i)) Return; Break;
+				Case 2:if(MRS_CheckWeaponSelectNext(Weaps2, Weap, Cycle, Slot, i)) Return; Break;
+				Case 3:if(MRS_CheckWeaponSelectNext(Weaps3, Weap, Cycle, Slot, i)) Return; Break;
+				Case 4:if(MRS_CheckWeaponSelectNext(Weaps4, Weap, Cycle, Slot, i)) Return; Break;
+				Case 5:if(MRS_CheckWeaponSelectNext(Weaps5, Weap, Cycle, Slot, i)) Return; Break;
+				Case 6:if(MRS_CheckWeaponSelectNext(Weaps6, Weap, Cycle, Slot, i)) Return; Break;
+				Case 7:if(MRS_CheckWeaponSelectNext(Weaps7, Weap, Cycle, Slot, i)) Return; Break;
+				Case 8:if(MRS_CheckWeaponSelectNext(Weaps8, Weap, Cycle, Slot, i)) Return; Break;
+				Case 9:if(MRS_CheckWeaponSelectNext(Weaps9, Weap, Cycle, Slot, i)) Return; Break;
+				Case 0:if(MRS_CheckWeaponSelectNext(Weaps0, Weap, Cycle, Slot, i)) Return; Break;
 			}
 			if(Cycle)Break;
 			if(i>=9){i = -1;Continue;}
@@ -458,16 +462,16 @@ Class MRS_SlotsChanger : Inventory
 		}
 	}
 	
-	bool MRS_CheckWeaponSelect(in array< class<weapon> > weaps, class<Weapon> Weap)
+	bool MRS_CheckWeaponSelect(in array< class<weapon> > weaps, Weapon Weap)
 	{
 		int Slot;
 		Bool Cycle;
-		if(Weap && Weaps.Find(Weap)!=Weaps.Size())Slot = Weaps.Find(Weap);
+		if(Weap && Weaps.Find(Weap.GetClass())!=Weaps.Size())Slot = Weaps.Find(Weap.GetClass());
 		else Slot = Weaps.Size()-1;
 		Cycle=false;
 		For(int i=Slot;i>-1;i--)
 		{
-			if(Owner.FindInventory(Weaps[i]) && Owner.Player.ReadyWeapon.GetClass() != Weaps[i])
+			if(Owner.FindInventory(Weaps[i]) && Weap && Weap.GetClass() != Weaps[i])
 				{Owner.A_SelectWeapon(Weaps[i]);Return true;}
 			if(Cycle && i==Slot)Return false;
 			if(i<1){i=Weaps.Size();Cycle=True;}
@@ -477,19 +481,20 @@ Class MRS_SlotsChanger : Inventory
 	Void ChangeWeap(int Change)//Selecting weapon thru slot
 	{
 		Let Weap = Owner.Player.ReadyWeapon;
-		if(Owner.Player.PendingWeapon != Null && Owner.Player.PendingWeapon.GetClassName() != "Object")Weap = Owner.Player.PendingWeapon;
+		
+		if(Owner.Player.PendingWeapon && Owner.Player.PendingWeapon.GetClassName() != "Object")Weap = Owner.Player.PendingWeapon;
 		Switch(Change)
 		{
-			Case 1:if(MRS_CheckWeaponSelect(Weaps1, Weap.GetClass())) Return; Break;
-			Case 2:if(MRS_CheckWeaponSelect(Weaps2, Weap.GetClass())) Return; Break;
-			Case 3:if(MRS_CheckWeaponSelect(Weaps3, Weap.GetClass())) Return; Break;
-			Case 4:if(MRS_CheckWeaponSelect(Weaps4, Weap.GetClass())) Return; Break;
-			Case 5:if(MRS_CheckWeaponSelect(Weaps5, Weap.GetClass())) Return; Break;
-			Case 6:if(MRS_CheckWeaponSelect(Weaps6, Weap.GetClass())) Return; Break;
-			Case 7:if(MRS_CheckWeaponSelect(Weaps7, Weap.GetClass())) Return; Break;
-			Case 8:if(MRS_CheckWeaponSelect(Weaps8, Weap.GetClass())) Return; Break;
-			Case 9:if(MRS_CheckWeaponSelect(Weaps9, Weap.GetClass())) Return; Break;
-			Case 0:if(MRS_CheckWeaponSelect(Weaps0, Weap.GetClass())) Return; Break;
+			Case 1:if(MRS_CheckWeaponSelect(Weaps1, Weap)) Return; Break;
+			Case 2:if(MRS_CheckWeaponSelect(Weaps2, Weap)) Return; Break;
+			Case 3:if(MRS_CheckWeaponSelect(Weaps3, Weap)) Return; Break;
+			Case 4:if(MRS_CheckWeaponSelect(Weaps4, Weap)) Return; Break;
+			Case 5:if(MRS_CheckWeaponSelect(Weaps5, Weap)) Return; Break;
+			Case 6:if(MRS_CheckWeaponSelect(Weaps6, Weap)) Return; Break;
+			Case 7:if(MRS_CheckWeaponSelect(Weaps7, Weap)) Return; Break;
+			Case 8:if(MRS_CheckWeaponSelect(Weaps8, Weap)) Return; Break;
+			Case 9:if(MRS_CheckWeaponSelect(Weaps9, Weap)) Return; Break;
+			Case 0:if(MRS_CheckWeaponSelect(Weaps0, Weap)) Return; Break;
 		}
 	}
 	
@@ -808,7 +813,7 @@ Class MRS_SlotsChanger : Inventory
 		{
 			if(Mouse.Y>250 && Mouse.X<370)
 			{
-				Holdin = Owner.Player.ReadyWeapon.GetClass();
+				if(Owner.Player.ReadyWeapon)Holdin = Owner.Player.ReadyWeapon.GetClass();
 				Return;
 			}
 			//Which weapon in slot
