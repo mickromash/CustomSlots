@@ -68,7 +68,7 @@ Extend Class MRS_Handler
 			sb.Fill(Color(255, BarCol.R, BarCol.G, BarCol.B), BasOfs.X+Ofst.X, BasOfs.Y+Ofst.Y, DesiredSize.X*Scaly.X, DesiredSize.Y*Scaly.Y, sb.DI_SCREEN_LEFT_TOP);
 			sb.Fill(Color(255, int(BarCol.R*.75), int(BarCol.G*.75), int(BarCol.B*.75)), BasOfs.X+Ofst.X+(DesiredSize.X*.1)*Scaly.X, BasOfs.Y+Ofst.Y+(DesiredSize.Y*.1)*Scaly.Y, (DesiredSize.X-DesiredSize.X*.2)*Scaly.X, (DesiredSize.Y-DesiredSize.Y*.2)*Scaly.Y, sb.DI_SCREEN_LEFT_TOP);
 			sb.DrawImage(Texman.GetName(Ico), Ofst+BasOfs + (DesiredSize.X*.5, DesiredSize.Y*.5)*Scaly.X, sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_CENTER, 1, Scale: Scaly*Scal);
-			if(Inv.SavedWeapons.Find(Slot[i])!=Inv.SavedWeapons.Size())sb.DrawString(SmalFont, "*", BasOfs + Ofst + (DesiredSize.X*.7, DesiredSize.Y*.1), sb.DI_SCREEN_LEFT_TOP, Font.CR_FIRE);
+			if(Inv.SavedWeapons.Find(Slot[i])!=Inv.SavedWeapons.Size())sb.DrawString(SmalFont, "*", BasOfs + Ofst + (DesiredSize.X*.7, DesiredSize.Y*.1)*Scaly.X, sb.DI_SCREEN_LEFT_TOP, Font.CR_FIRE, Scale:Scaly);
 			String Nam = GetDefaultByType(Slot[i]).GetTag();
 			if(Players[ConsolePlayer].mo.FindInventory(Slot[i]))Nam = Players[ConsolePlayer].mo.FindInventory(Slot[i]).GetTag();
 			Float TextSize = SmallFont.StringWidth(Nam)*1.2;
@@ -162,20 +162,24 @@ Extend Class MRS_Handler
 			
 		}
 		
-		if(Inv.WheelOpen)
+		if(Inv.WheelOpen)//Weapon wheel
 		{
 			bool OriginalFullscreen = Sb.FullscreenOffsets;
 			Sb.FullscreenOffsets = true;
 			if(Inv.WhelSlot!=ChosenSlot && Inv.WhelSlot!=-1)S_StartSound("DeltaWWheel", CHAN_AUTO, CHANF_UI|CHANF_LOCAL);
 			ChosenSlot = Inv.WhelSlot;
 			
-			sb.DrawImage("DelWWeel", (0,0), sb.DI_SCREEN_CENTER|sb.DI_ITEM_CENTER, .6, scale:(.4,.4));
-			if(ChosenSlot!=-1){int Slt = ChosenSlot;if(Slt==0)Slt=10;
-				sb.DrawImage("AshySprk", 
-				((Slt==1||Slt==5)?Inv.WhelSlt[ChosenSlot][1].X:(Slt==10||Slt==6)?Inv.WhelSlt[ChosenSlot][0].X:
-				Slt<6?Inv.WhelSlt[ChosenSlot][0].X*3:Inv.WhelSlt[ChosenSlot][1].X*3,
-				(Slt==3||Slt==8)?Inv.WhelSlt[ChosenSlot][1].Y-5:(Slt<8&&Slt>3)?Inv.WhelSlt[ChosenSlot][0].Y*3:Inv.WhelSlt[ChosenSlot][1].Y*3),
-				sb.DI_SCREEN_CENTER|sb.DI_ITEM_CENTER, 1);}
+			sb.DrawImage("DelWWeel", (0,0), sb.DI_SCREEN_CENTER|sb.DI_ITEM_CENTER, .6, scale:HUDScale*.4);
+			
+			if(ChosenSlot!=-1)
+			{
+				int Slt = ChosenSlot;if(Slt==0)Slt=10;
+				Vector2 SparkPalce = ((Slt==1||Slt==5)?Inv.WhelSlt[ChosenSlot][1].X:(Slt==10||Slt==6)?Inv.WhelSlt[ChosenSlot][0].X:
+					Slt<6?Inv.WhelSlt[ChosenSlot][0].X*3:Inv.WhelSlt[ChosenSlot][1].X*3,
+					(Slt==3||Slt==8)?Inv.WhelSlt[ChosenSlot][1].Y-5:(Slt<8&&Slt>3)?Inv.WhelSlt[ChosenSlot][0].Y*3:Inv.WhelSlt[ChosenSlot][1].Y*3);
+				
+				sb.DrawImage("AshySprk", Vec2Mult(SparkPalce, HUDScale), sb.DI_SCREEN_CENTER|sb.DI_ITEM_CENTER, 1, Scale:HUDScale);
+			}
 			
 			/*int Col=0;
 			For(int i=0;i<10;i++)
