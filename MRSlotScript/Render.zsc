@@ -16,7 +16,15 @@ Extend Class MRS_Handler
 			}
 			else
 			{
-				Ico = GetDefaultByType(Wep).FindState("Spawn").GetSpriteTexture(0,0, (0,0));
+				int emerg;
+				State Stat = GetDefaultByType(Wep).FindState("Spawn");
+				Ico = Stat.GetSpriteTexture(0,0, (0,0));
+				While((!Ico.IsValid()||Texman.GetName(Ico) == "TNT1A0") && Stat.NextState!=Null)
+				{
+					if(emerg>30)Break;
+					Ico = Stat.NextState.GetSpriteTexture(0,0, (0,0));
+					emerg++;
+				}
 			}
 			JustGetted.Push(Texman.GetName(Ico));
 			JustGettedSlt.Push(e.args[0]);
@@ -33,9 +41,10 @@ Extend Class MRS_Handler
 	{
 		Let Sb = StatusBar;
 		Vector2 Scaly = Vec2Div(Vec2Div((4, 4), Sb.GetHUDScale()), Vec2Div((4, 4), Sb.defaultScale));
+		Let Plr = Players[ConsolePlayer];
 		
 		Class<Weapon> PlrWeap = Null;
-		if(Players[ConsolePlayer].ReadyWeapon)PlrWeap = Players[ConsolePlayer].ReadyWeapon.GetClass();
+		if(Plr.ReadyWeapon)PlrWeap = Plr.ReadyWeapon.GetClass();
 		
 		ofst.X *= Scaly.X;
 		
@@ -49,7 +58,7 @@ Extend Class MRS_Handler
 		
 		For(int i=0;i<Slot.Size();i++)
 		{
-			if(!Slot[i]||(!Players[ConsolePlayer].mo.FindInventory(Slot[i])&&Inv.SavedWeapons.Find(Slot[i])==Inv.SavedWeapons.Size()))Continue;
+			if(!Slot[i]||(!Plr.mo.FindInventory(Slot[i])&&Inv.SavedWeapons.Find(Slot[i])==Inv.SavedWeapons.Size()))Continue;
 			Color BarCol = Color(255, 0, 50, 100);
 			if(Slot[i] == PlrWeap)BarCol = Color(255, 0, 100, 200);
 			Vector2 Size = (40, 30);
@@ -59,9 +68,17 @@ Extend Class MRS_Handler
 				Ico = GetDefaultByType(Slot[i]).Icon;
 				Size = Texman.GetScaledSize(Ico);
 			}
-			else if(Players[ConsolePlayer].mo.FindInventory(Slot[i]))
+			else if(Plr.mo.FindInventory(Slot[i]))
 			{
-				Ico = Players[ConsolePlayer].mo.FindInventory(Slot[i]).FindState("Spawn").GetSpriteTexture(0,0, (0,0));
+				int emerg;
+				State Stat = Plr.mo.FindInventory(Slot[i]).FindState("Spawn");
+				Ico = Stat.GetSpriteTexture(0,0, (0,0));
+				While((!Ico.IsValid()||Texman.GetName(Ico) == "TNT1A0") && Stat.NextState!=Null)
+				{
+					if(emerg>30)Break;
+					Ico = Stat.NextState.GetSpriteTexture(0,0, (0,0));
+					emerg++;
+				}
 				Size = Texman.GetScaledSize(Ico);
 			}
 			Float Scal = DesiredSize.X*.8/Max(1, Size.X);
@@ -70,7 +87,7 @@ Extend Class MRS_Handler
 			sb.DrawImage(Texman.GetName(Ico), Ofst+BasOfs + (DesiredSize.X*.5, DesiredSize.Y*.5)*Scaly.X, sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_CENTER, 1, Scale: Scaly*Scal);
 			if(Inv.SavedWeapons.Find(Slot[i])!=Inv.SavedWeapons.Size())sb.DrawString(SmalFont, "*", BasOfs + Ofst + (DesiredSize.X*.7, DesiredSize.Y*.1)*Scaly.X, sb.DI_SCREEN_LEFT_TOP, Font.CR_FIRE, Scale:Scaly);
 			String Nam = GetDefaultByType(Slot[i]).GetTag();
-			if(Players[ConsolePlayer].mo.FindInventory(Slot[i]))Nam = Players[ConsolePlayer].mo.FindInventory(Slot[i]).GetTag();
+			if(Plr.mo.FindInventory(Slot[i]))Nam = Plr.mo.FindInventory(Slot[i]).GetTag();
 			Float TextSize = SmallFont.StringWidth(Nam)*1.2;
 			Scal = DesiredSize.X/Max(1, TextSize);
 			
