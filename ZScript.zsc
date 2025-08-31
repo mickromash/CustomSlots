@@ -90,7 +90,7 @@ Class MRS_Handler : EventHandler
 				Inv.PlrPitch = Inv.Owner.Pitch;
 			}
 		}
-		if(e.name ~== "MRS_OpenWheel"){if(!Inv.Editing)Inv.OpenWheel();}
+		if(e.name ~== "MRS_OpenWheel"){if(!Inv.Editing)Inv.OpenWheel(e.Args[0]);}
 		
 		if(e.name ~== "MRS_ScrollDown"){
 			Inv.ScrollPos+=1;
@@ -1057,9 +1057,10 @@ Class MRS_SlotsChanger : Inventory
 	Int WhelSlot;
 	Vector2 WhelSlt[10][2];//0 - Top Left, 1 - Bottom Right
 	
-	Void OpenWheel()
+	Void OpenWheel(Bool Open)
 	{
-		if(WheelOpen)
+		WheelOpen = Open;
+		if(!WheelOpen)
 		{
 			if(WhelSlot>-1 && WhelSlot<10)ChangeWeap(WhelSlot);
 			WhelCursor = (0, 0);
