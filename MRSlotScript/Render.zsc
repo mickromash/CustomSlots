@@ -36,11 +36,12 @@ Extend Class MRS_Handler
 	Ui Array<int> JustGettedSlt;
 	Ui Array<float> JustGettedPos;
 	Ui LinearValueInterpolator AutoSlotInter;
-	
+		
 	Ui Void MRS_DrawSlot(in array< class<weapon> > Slot, MRS_SlotsChanger Inv, Vector2 Ofst = (0,0), int SlotNum = 1)
 	{
 		Let Sb = StatusBar;
 		Vector2 Scaly = Vec2Div(Vec2Div((4, 4), Sb.GetHUDScale()), Vec2Div((4, 4), Sb.defaultScale));
+
 		Let Plr = Players[ConsolePlayer];
 		
 		Class<Weapon> PlrWeap = Null;
@@ -406,7 +407,7 @@ Extend Class MRS_Handler
 			if(CVar.GetCVar("MRS_TouchScreen", Inv.Owner.Player).GetBool()){
 			String Cursor = CVar.GetCVar("vid_cursor", Players[ConsolePlayer]).GetString();
 			if(!Texman.CheckForTexture(Cursor, Texman.TYPE_ANY) || Cursor == "None")Cursor = "cursor";
-			sb.DrawImage(Cursor, Vec2Mult(Inv.Mouse, HUDScale), sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_LEFT_TOP, .9, scale: HUDScale*.7);}
+			sb.DrawImage(Cursor, Vec2Mult(Inv.Mouse, HUDScale), sb.DI_SCREEN_LEFT_TOP|sb.DI_ITEM_LEFT_TOP, .9, scale: HUDScale);}
 			if(Inv.HighLightDel>30 && !(Inv.Mouse.X>370 && Inv.Mouse.Y>24*10.5 && Inv.Mouse.Y<=24*11))
 			{
 				Float Alph = Inv.HighlightDel - 30;
@@ -422,7 +423,10 @@ Extend Class MRS_Handler
 				sb.Fill(Color(int(200*Alph), 255, 255, 255), (Inv.Mouse.X+2)*HUDScale.X, (Inv.MOuse.Y-5)*HUDScale.Y, Size*.52*HUDScale.X, 20*.55*HUDScale.Y, sb.DI_SCREEN_LEFT_TOP);
 				sb.DrawString(BigFnt, Inv.Highlight, Vec2Mult((Inv.Mouse + (2, -2)), HUDScale), sb.DI_SCREEN_LEFT_TOP, Font.CR_BLACK, Alph, scale:HUDScale*.5);}
 			}
-			//sb.DrawString(SmalFont, "\cdX:\c-"..int(Inv.Mouse.X).."\cdY:\c-"..int(Inv.Mouse.Y), Vec2Mult(Inv.Mouse, HUDScale), sb.DI_SCREEN_LEFT_TOP, Scale:HUDScale);
+			if(MRS_Debug){
+				sb.DrawString(SmalFont, "\cdX:\c-"..int(Inv.Mouse.X).."\cdY:\c-"..int(Inv.Mouse.Y), (0,0), sb.DI_SCREEN_LEFT_TOP, Scale:HUDScale);
+				Sb.Fill(Color(255, GameTic%10<5?255:0, GameTic%10<5?0:255,0), Inv.Mouse.X*HUDScale.X, Inv.Mouse.Y*HUDScale.Y, HUDScale.X*2, HUDScale.Y*2, Sb.DI_SCREEN_LEFT_TOP);
+			}
 		}
 		else
 		{

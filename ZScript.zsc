@@ -218,9 +218,15 @@ Class MRS_Handler : EventHandler
 		if(e.Type == e.Type_LButtonUp)SendNetworkEvent("MRS_MUnPress");
 		if(e.Type == e.Type_RButtonDown)SendNetworkEvent("MRS_MRPress");
 		
-		Vector2 BaseScale = StatusBar.GetHUDScale();
-		Vector2 HUDScale = Vec2Div((4, 4), BaseScale);
-		SendNetworkEvent("MRS_UpdateMouse", e.MouseX/BaseScale.X/HUDScale.X, e.MouseY/BaseScale.Y/HUDScale.Y);
+		Let Sb = StatusBar;
+		
+		Vector2 Mouse = (e.MouseX, e.MouseY);
+		
+		Vector2 BaseScale = Sb.GetHUDScale();//Resolution vodoo magic
+		Vector2 HUDScale = Vec2Div((4, 4), BaseScale);//More vodoo
+		Vector2 Scaly = Vec2Div((4, 4), Sb.defaultScale);//Resolution scale
+				
+		SendNetworkEvent("MRS_UpdateMouse", Mouse.X/BaseScale.X/HUDScale.X*Scaly.X, Mouse.Y/BaseScale.Y/HUDScale.Y*Scaly.Y);
 		Return false;
 	}
 	
@@ -534,10 +540,10 @@ Class MRS_SlotsChanger : Inventory
 	Void Customizing()
 	{
 		//Console.Printf("MouseX "..int(Mouse.X).." MouseY "..int(Mouse.Y));
-		if(Mouse.X>650)Mouse.X = 650;
+		//if(Mouse.X>650)Mouse.X = 650;
 		if(Mouse.X<0)Mouse.X = 0;
 		if(Mouse.Y<0)Mouse.Y =0;
-		if(Mouse.Y>370)Mouse.Y = 370;
+		//if(Mouse.Y>370)Mouse.Y = 370;
 		Let XVel = Owner.Player.Cmd.Yaw * .01;
 		Let YVel = Owner.Player.Cmd.Pitch * .01;
 		
