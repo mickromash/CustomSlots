@@ -22,7 +22,8 @@ Extend Class MRS_Handler
 				While((!Ico.IsValid()||Texman.GetName(Ico) == "TNT1A0") && Stat.NextState!=Null)
 				{
 					if(emerg>30)Break;
-					Ico = Stat.NextState.GetSpriteTexture(0,0, (0,0));
+					Stat = Stat.NextState;
+					Ico = Stat.GetSpriteTexture(0,0, (0,0));
 					emerg++;
 				}
 			}
@@ -77,7 +78,8 @@ Extend Class MRS_Handler
 				While((!Ico.IsValid()||Texman.GetName(Ico) == "TNT1A0") && Stat.NextState!=Null)
 				{
 					if(emerg>30)Break;
-					Ico = Stat.NextState.GetSpriteTexture(0,0, (0,0));
+					Stat = Stat.NextState;
+					Ico = Stat.GetSpriteTexture(0,0, (0,0));
 					emerg++;
 				}
 				Size = Texman.GetScaledSize(Ico);
